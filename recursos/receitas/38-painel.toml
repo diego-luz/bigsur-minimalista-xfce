@@ -149,8 +149,18 @@ $blocos  </property>
 </channel>
 XMLEOF
 
-xfce4-panel --quit >/dev/null 2>&1 || true
-sleep 2
+# --quit com o painel parado nao falha em silencio: o xfce4-panel abre a janela
+# "Falha ao sair do painel" (org.xfce.Panel nao existe no D-Bus). Por isso so
+# pede para sair quando ele esta rodando, e espera ele fechar de fato
+if pgrep -x xfce4-panel >/dev/null; then
+  xfce4-panel --quit >/dev/null 2>&1 || true
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    pgrep -x xfce4-panel >/dev/null || break
+    sleep 0.5
+  done
+  pkill -x xfce4-panel 2>/dev/null || true
+fi
+sleep 1
 pkill -x xfconfd 2>/dev/null || true
 sleep 1
 setsid --fork xfce4-panel >/dev/null 2>&1 </dev/null

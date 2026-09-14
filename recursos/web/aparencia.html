@@ -262,7 +262,9 @@ function desenharGaleria(){
 
 function galeria(moldura, seletor, chave, especiais){
   const caixa = $(seletor);
-  if (!papeis.length){ $(moldura).hidden = true; return; }
+  // As imagens so existem depois que a receita 33 baixa o repositorio. Antes
+  // disso a galeria continua visivel, com as escolhas que nao dependem delas e
+  // um aviso, senao a opcao some sem explicacao na primeira execucao
   $(moldura).hidden = false;
   caixa.textContent = "";
 
@@ -274,6 +276,17 @@ function galeria(moldura, seletor, chave, especiais){
     b.addEventListener("click", () => { estado[chave] = valor; desenhar(); });
     caixa.appendChild(b);
   });
+
+  if (!papeis.length){
+    const aviso = document.createElement("p");
+    aviso.className = "dica";
+    aviso.style.gridColumn = "1 / -1";
+    aviso.style.margin = "4px 2px 0";
+    aviso.textContent = instalado
+      ? "Nenhum papel de parede encontrado. Reaplique a etapa de papéis de parede para baixá-los."
+      : "As imagens para escolher aparecem aqui depois da instalação. Até lá, o tema escolhe um combinando.";
+    caixa.appendChild(aviso);
+  }
 
   papeis.forEach(w => {
     const b = document.createElement("button");

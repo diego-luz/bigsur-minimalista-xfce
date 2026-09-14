@@ -29,18 +29,22 @@ if [ "$D3_MENU_GLOBAL" = "sim" ]; then
   [ -n "$appmenu" ] || echo "plugin de menu global ausente, barra montada sem ele"
 fi
 
-# titulo e botoes da janela maximizada dentro da barra
-windowck=0
+# titulo e botoes da janela maximizada dentro da barra. O id do plugin e o
+# nome do .desktop, que nao segue o nome do pacote: os botoes sao wckbuttons e
+# o titulo e windowck-plugin. Um id que nao existe faz o painel abrir a janela
+# "plugin nao pode ser carregado" na frente do usuario, entao confere um a um
+wck=""
 if [ "$D3_TITULO_NO_PAINEL" = "sim" ]; then
-  if ls /usr/share/xfce4/panel/plugins/*windowck*.desktop >/dev/null 2>&1; then
-    windowck=1
-  else
-    echo "plugin windowck ausente, barra montada sem ele"
-  fi
+  for p in wckbuttons windowck-plugin; do
+    if [ -f "/usr/share/xfce4/panel/plugins/$p.desktop" ]; then
+      wck="$wck $p"
+    else
+      echo "plugin $p ausente, barra montada sem ele"
+    fi
+  done
 fi
 
-plugins="whiskermenu"
-[ "$windowck" = "1" ] && plugins="$plugins windowck-buttons windowck-title"
+plugins="whiskermenu$wck"
 [ -n "$appmenu" ] && plugins="$plugins $appmenu"
 plugins="$plugins separador-expande systray separador pulseaudio separador power-manager-plugin separador clock separador actions"
 

@@ -1,0 +1,287 @@
+<title>Programas - d3bian-init</title>
+<link rel="stylesheet" href="estilo.css">
+<script src="comum.js"></script>
+
+<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
+
+<a class="voltar" href="/"><span aria-hidden="true">&larr;</span> Voltar ao início</a>
+<h1>Programas úteis</h1>
+<p class="sub" id="aviso">Carregando…</p>
+
+<input id="busca" class="busca" type="search" autocomplete="off"
+       placeholder="Buscar por nome, pacote ou descrição…" aria-label="Buscar programas">
+<p class="contagem" id="contagem"></p>
+
+<div class="acoes" style="margin-top:0;margin-bottom:20px">
+  <button class="bt sec" id="btTodos">Marcar tudo que falta</button>
+  <button class="bt sec" id="btNenhum">Desmarcar tudo</button>
+</div>
+
+<div id="lista"></div>
+
+<div class="barra">
+  <!-- a pergunta aparece aqui, junto do botao que a pessoa acabou de apertar -->
+  <div id="confirmacao" hidden class="aviso erro" role="alert"></div>
+  <span class="conta" id="conta">Nada selecionado</span>
+  <button class="bt pri" id="btInstalar" disabled>Instalar selecionados</button>
+  <button class="bt sec" id="btRemover" disabled>Remover selecionados</button>
+</div>
+
+<p class="rodape">
+  Só pacotes do repositório oficial do Debian. O servidor recusa qualquer nome que
+  não esteja nesta lista, então a página não consegue instalar coisa de fora.
+</p>
+
+<script>
+const $ = s => document.querySelector(s);
+let catalogo = null, retomou = false;
+// pacotes que acabaram de mudar; o proximo desenho os destaca uma vez
+let destacar = new Set();
+
+function selecionados(){
+  return [...document.querySelectorAll("#lista input:checked")].map(i => i.value);
+}
+
+function atualizarBarra(){
+  const n = selecionados().length;
+  $("#conta").textContent = n === 0 ? "Nada selecionado"
+    : n === 1 ? "1 programa selecionado" : `${n} programas selecionados`;
+  $("#btInstalar").disabled = n === 0 || Terminal.ocupado();
+  $("#btRemover").disabled = n === 0 || Terminal.ocupado();
+}
+
+// nome amigavel de um pacote, para o terminal e as mensagens
+function nomeDe(pkg){
+  for (const cat of (catalogo || {}).categorias || []){
+    const it = (cat.itens || []).find(i => i.pkg === pkg);
+    if (it) return it.nome || pkg;
+  }
+  return pkg;
+}
+
+function render(dados){
+  catalogo = dados;
+  $("#aviso").textContent = dados.aviso || "";
+  const lista = $("#lista");
+  lista.textContent = "";
+  (dados.categorias || []).forEach(cat => {
+    const grupo = document.createElement("div");
+    grupo.className = "grupo";
+    const h = document.createElement("h2");
+    h.textContent = cat.nome;
+    grupo.appendChild(h);
+    if (cat.aviso){
+      const c = document.createElement("p");
+      c.className = "cabecalho"; c.textContent = cat.aviso;
+      grupo.appendChild(c);
+    }
+    const caixa = document.createElement("div");
+    caixa.className = "itens";
+    (cat.itens || []).forEach(it => {
+      // um item de fonte externa so fica disponivel depois que o repositorio
+      // e acrescentado, entao ele aparece mesmo antes disso
+      if (!it.disponivel && !it.fonte) return;
+      const rot = document.createElement("label");
+      rot.className = "item" + (it.instalado ? " ja" : "") + (it.fonte ? " externo" : "")
+                    + (destacar.has(it.pkg) ? " mudou" : "");
+      // texto sem acento, para a busca achar "grafico" digitando "gráfico" e vice-versa
+      rot.dataset.busca = semAcento(`${it.nome} ${it.pkg} ${it.desc || ""}`);
+      const cx = document.createElement("input");
+      cx.type = "checkbox"; cx.value = it.pkg; cx.dataset.instalado = it.instalado ? "1" : "0";
+      cx.addEventListener("change", atualizarBarra);
+      const txt = document.createElement("div");
+      const nome = document.createElement("div");
+      nome.className = "n"; nome.textContent = it.nome || it.pkg;
+      if (it.instalado){
+        const selo = document.createElement("span");
+        selo.className = "selo"; selo.textContent = "instalado";
+        nome.appendChild(selo);
+      } else if (it.fonte){
+        const selo = document.createElement("span");
+        selo.className = "selo alerta"; selo.textContent = "fonte de terceiro";
+        nome.appendChild(selo);
+      }
+      const desc = document.createElement("div");
+      desc.className = "d"; desc.textContent = it.desc || "";
+      txt.appendChild(nome); txt.appendChild(desc);
+      rot.appendChild(cx); rot.appendChild(txt);
+      caixa.appendChild(rot);
+    });
+    if (caixa.children.length){ grupo.appendChild(caixa); lista.appendChild(grupo); }
+  });
+  atualizarBarra();
+  filtrar();
+}
+
+const semAcento = t => (t || "").toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+function filtrar(){
+  const termo = semAcento($("#busca").value.trim());
+  let visiveis = 0;
+  document.querySelectorAll("#lista .grupo").forEach(grupo => {
+    let noGrupo = 0;
+    grupo.querySelectorAll(".item").forEach(item => {
+      const bate = !termo || item.dataset.busca.includes(termo);
+      item.hidden = !bate;
+      if (bate) noGrupo++;
+    });
+    grupo.hidden = noGrupo === 0;
+    visiveis += noGrupo;
+  });
+  const total = document.querySelectorAll("#lista .item").length;
+  $("#contagem").textContent = termo
+    ? (visiveis ? `${visiveis} de ${total} programas` : "Nenhum programa com esse termo")
+    : `${total} programas, todos do repositório oficial`;
+}
+
+async function carregar(){
+  // ?q=termo abre a pagina ja filtrada, util para atalho e para teste
+  const q = new URLSearchParams(location.search).get("q");
+  if (q) $("#busca").value = q;
+  try { render(await fetch("/api/programas").then(r => r.json())); }
+  catch (e) { $("#aviso").textContent = "Não consegui falar com o servidor local."; }
+  destacar = new Set();
+
+  // uma instalacao que ja rodava antes de a pagina abrir volta a aparecer
+  if (!retomou){
+    retomou = true;
+    let tarefa = null;     // {remover, pacotes}, tirado do rotulo do servidor
+    Terminal.retomar({
+      titulo: rotulo => {
+        const m = (rotulo || "").match(/^(Instalando|Removendo): (.*)$/);
+        if (!m) return rotulo;
+        tarefa = {remover: m[1] === "Removendo", pacotes: m[2].split(", ")};
+        return tarefa.remover ? "Removendo programas" : "Instalando programas";
+      },
+      etapas: () => tarefa ? tarefa.pacotes.map(p => ({id: p, nome: nomeDe(p)})) : [],
+      aoTerminar: async codigo => {
+        if (tarefa && codigo === 0) destacar = new Set(tarefa.pacotes);
+        await carregar();
+        return tarefa ? fimPrograma(tarefa.pacotes, tarefa.remover, codigo) : null;
+      },
+    });
+  }
+}
+carregar();
+
+$("#busca").addEventListener("input", filtrar);
+$("#busca").addEventListener("keydown", e => {
+  if (e.key === "Escape"){ e.target.value = ""; filtrar(); }
+});
+
+// so marca o que esta visivel, para a busca servir de recorte
+$("#btTodos").addEventListener("click", () => {
+  document.querySelectorAll("#lista .item").forEach(item => {
+    if (item.hidden) return;
+    const i = item.querySelector("input");
+    if (i && i.dataset.instalado !== "1") i.checked = true;
+  });
+  atualizarBarra();
+});
+$("#btNenhum").addEventListener("click", () => {
+  document.querySelectorAll("#lista input").forEach(i => { i.checked = false; });
+  atualizarBarra();
+});
+
+function travar(ocupado){
+  ["#btInstalar", "#btRemover", "#btTodos", "#btNenhum"].forEach(s => {
+    const b = $(s); if (b) b.disabled = ocupado;
+  });
+  if (!ocupado) atualizarBarra();
+}
+// quando a tarefa termina (ou retoma depois de recarregar), a barra acompanha
+Terminal.aoMudar(travar);
+
+// pergunta dentro da barra fixa: texto, lista e dois botoes
+function perguntar(texto, itens, rotuloSim, aoSim){
+  const caixa = $("#confirmacao");
+  caixa.textContent = "";
+  const t = document.createElement("b");
+  t.textContent = "Confirme antes de continuar";
+  caixa.appendChild(t);
+  caixa.appendChild(document.createTextNode(texto));
+  if (itens && itens.length){
+    const ul = document.createElement("ul");
+    itens.forEach(x => { const li = document.createElement("li"); li.textContent = x; ul.appendChild(li); });
+    caixa.appendChild(ul);
+  }
+  const acoes = document.createElement("div");
+  acoes.className = "acoes"; acoes.style.marginTop = "10px";
+  const sim = document.createElement("button");
+  sim.className = "bt pri"; sim.textContent = rotuloSim;
+  const nao = document.createElement("button");
+  nao.className = "bt sec"; nao.textContent = "Cancelar";
+  sim.addEventListener("click", () => { caixa.hidden = true; aoSim(); });
+  nao.addEventListener("click", () => { caixa.hidden = true; });
+  acoes.append(sim, nao);
+  caixa.appendChild(acoes);
+  caixa.hidden = false;
+  sim.focus();
+}
+
+async function agir(rota, corpo, remover){
+  travar(true);
+  $("#confirmacao").hidden = true;
+
+  let r;
+  try {
+    r = await fetch(rota, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(corpo)
+    }).then(x => x.json());
+  } catch (e) { r = {erro: "O servidor local não respondeu."}; }
+
+  if (!r.iniciado){
+    travar(false);
+    if (r.motivo === "fonte_externa"){
+      const nomes = r.externas.map(e => e.nome).join(", ");
+      perguntar(`${nomes} não vem do repositório do Debian. Leia o que será acrescentado ao seu sistema:`,
+                r.externas.map(e => e.aviso), "Entendi, pode instalar",
+                () => agir(rota, {...corpo, confirmar_externo: true}, remover));
+      return;
+    }
+    if (r.motivo === "arrasta_outros"){
+      perguntar("O apt levaria junto pacotes que você não pediu:", r.extras, "Remover assim mesmo",
+                () => agir(rota, {...corpo, confirmar: true}, remover));
+      return;
+    }
+    Terminal.avisar(false, "Não deu para começar",
+      r.erro || (r.motivo === "ocupado" ? "Já tem uma tarefa rodando. Espere terminar." : "Não consegui iniciar."));
+    return;
+  }
+
+  const pacotes = r.pacotes || corpo.pacotes;
+  Terminal.acompanhar({
+    titulo: remover ? "Removendo programas" : "Instalando programas",
+    etapas: pacotes.map(p => ({id: p, nome: nomeDe(p)})),
+    aoTerminar: async codigo => {
+      if (codigo === 0) destacar = new Set(pacotes);
+      await carregar();
+      return fimPrograma(pacotes, remover, codigo);
+    },
+  });
+}
+
+// o que dizer ao terminar, igual para o clique e para a tarefa retomada
+function fimPrograma(pacotes, remover, codigo){
+  const nomes = pacotes.map(nomeDe);
+  if (codigo === 0) return {bom: true,
+    titulo: remover ? "Programas removidos" : "Programas instalados",
+    texto: (pacotes.length === 1 ? "" : `${pacotes.length} programas: `) + nomes.join(", ") + ".",
+    itens: remover ? [] : ["Eles já aparecem no menu de aplicativos."]};
+  if (codigo !== null) return {bom: false, titulo: "O apt parou com erro",
+    texto: `Código ${codigo}. As linhas vermelhas do log mostram o motivo.`,
+    itens: ["Se falar em permissão, abra o painel pelo comando d3bian-init."]};
+  return null;
+}
+
+$("#btInstalar").addEventListener("click", () =>
+  agir("/api/programas/instalar", {pacotes: selecionados()}, false));
+
+$("#btRemover").addEventListener("click", () => {
+  const alvos = selecionados();
+  if (!confirm(`Remover ${alvos.length} programa(s)?\n\n` + alvos.map(nomeDe).join(", "))) return;
+  agir("/api/programas/remover", {pacotes: alvos}, true);
+});
+</script>

@@ -1,0 +1,33 @@
+{
+  "tema": {
+    "escuro": "tema-escuro.jpg",
+    "claro": "tema-claro.jpg"
+  },
+  "widget": {
+    "sim": "widget-sim.jpg",
+    "nao": "widget-nao.jpg"
+  },
+  "logo": {
+    "debian": "logo-debian.jpg",
+    "debian-cor": "logo-debian-cor.jpg",
+    "maca": "logo-maca.jpg",
+    "tux": "logo-tux.jpg",
+    "tux-cor": "logo-tux-cor.jpg"
+  },
+  "menu_global": {
+    "sim": "menu_global-sim.jpg",
+    "nao": "menu_global-nao.jpg"
+  },
+  "dock": {
+    "sim": "dock-sim.jpg",
+    "nao": "dock-nao.jpg"
+  },
+  "login_usuarios": {
+    "campos": "login_usuarios-campos.jpg",
+    "lista": "login_usuarios-lista.jpg"
+  },
+  "login_desfoque": {
+    "sim": "login_desfoque-sim.jpg",
+    "nao": "login_desfoque-nao.jpg"
+  }
+}

@@ -1,0 +1,343 @@
+{
+  "aviso": "Somente pacotes do repositorio oficial do Debian. Nada de terceiros, nada de PPA, nada de .deb avulso. O servidor so aceita instalar pacotes que estao nesta lista.",
+  "categorias": [
+    {
+      "nome": "Terminal e sistema",
+      "itens": [
+        {
+          "pkg": "htop",
+          "nome": "htop",
+          "desc": "Monitor de processos interativo, o classico"
+        },
+        {
+          "pkg": "btop",
+          "nome": "btop",
+          "desc": "Monitor de recursos com graficos, sucessor bonito do htop"
+        },
+        {
+          "pkg": "ncdu",
+          "nome": "ncdu",
+          "desc": "Descobre o que ocupa espaco no disco, navegando por pastas"
+        },
+        {
+          "pkg": "duf",
+          "nome": "duf",
+          "desc": "Mostra o uso dos discos em tabela colorida"
+        },
+        {
+          "pkg": "iotop",
+          "nome": "iotop",
+          "desc": "Mostra qual processo esta usando o disco"
+        },
+        {
+          "pkg": "nmon",
+          "nome": "nmon",
+          "desc": "Painel de desempenho com processador, memoria, rede e disco"
+        },
+        {
+          "pkg": "tmux",
+          "nome": "tmux",
+          "desc": "Divide o terminal em paineis e mantem sessoes vivas"
+        },
+        {
+          "pkg": "fastfetch",
+          "nome": "fastfetch",
+          "desc": "Resumo do sistema com o logo da distribuicao"
+        },
+        {
+          "pkg": "tree",
+          "nome": "tree",
+          "desc": "Desenha a arvore de pastas"
+        }
+      ]
+    },
+    {
+      "nome": "Busca e arquivos no terminal",
+      "itens": [
+        {
+          "pkg": "ripgrep",
+          "nome": "ripgrep",
+          "desc": "Busca texto dentro de arquivos, muito rapido"
+        },
+        {
+          "pkg": "fd-find",
+          "nome": "fd",
+          "desc": "Procura arquivos por nome, mais simples que o find"
+        },
+        {
+          "pkg": "fzf",
+          "nome": "fzf",
+          "desc": "Busca interativa para filtrar qualquer lista"
+        },
+        {
+          "pkg": "bat",
+          "nome": "bat",
+          "desc": "Mostra arquivos com cor e numero de linha, substitui o cat"
+        },
+        {
+          "pkg": "p7zip-full",
+          "nome": "7-Zip",
+          "desc": "Abre e cria arquivos 7z, zip e outros"
+        },
+        {
+          "pkg": "unrar-free",
+          "nome": "unrar",
+          "desc": "Abre arquivos .rar"
+        },
+        {
+          "pkg": "rsync",
+          "nome": "rsync",
+          "desc": "Copia e sincroniza pastas, local ou pela rede"
+        },
+        {
+          "pkg": "rclone",
+          "nome": "rclone",
+          "desc": "Sincroniza com armazenamento na nuvem"
+        }
+      ]
+    },
+    {
+      "nome": "Rede",
+      "itens": [
+        {
+          "pkg": "nmap",
+          "nome": "nmap",
+          "desc": "Descobre maquinas e portas abertas na rede"
+        },
+        {
+          "pkg": "mtr-tiny",
+          "nome": "mtr",
+          "desc": "Traceroute continuo, bom para achar onde a conexao cai"
+        },
+        {
+          "pkg": "iperf3",
+          "nome": "iperf3",
+          "desc": "Mede a velocidade real entre duas maquinas"
+        },
+        {
+          "pkg": "speedtest-cli",
+          "nome": "speedtest",
+          "desc": "Testa a velocidade da internet pelo terminal"
+        },
+        {
+          "pkg": "traceroute",
+          "nome": "traceroute",
+          "desc": "Mostra o caminho ate um servidor"
+        },
+        {
+          "pkg": "whois",
+          "nome": "whois",
+          "desc": "Consulta dados de dominios e faixas de IP"
+        },
+        {
+          "pkg": "filezilla",
+          "nome": "FileZilla",
+          "desc": "Cliente grafico de FTP e SFTP"
+        }
+      ]
+    },
+    {
+      "nome": "Area de trabalho",
+      "itens": [
+        {
+          "pkg": "flameshot",
+          "nome": "Flameshot",
+          "desc": "Captura de tela com anotacoes, seta e destaque"
+        },
+        {
+          "pkg": "copyq",
+          "nome": "CopyQ",
+          "desc": "Historico da area de transferencia"
+        },
+        {
+          "pkg": "redshift",
+          "nome": "Redshift",
+          "desc": "Deixa a tela mais quente a noite"
+        },
+        {
+          "pkg": "catfish",
+          "nome": "Catfish",
+          "desc": "Busca de arquivos com janela, integra com o Thunar"
+        },
+        {
+          "pkg": "keepassxc",
+          "nome": "KeePassXC",
+          "desc": "Cofre de senhas local, sem nuvem"
+        },
+        {
+          "pkg": "gnome-disk-utility",
+          "nome": "Discos",
+          "desc": "Formata pendrive, checa saude do disco"
+        },
+        {
+          "pkg": "baobab",
+          "nome": "Analisador de disco",
+          "desc": "Versao grafica do ncdu"
+        },
+        {
+          "pkg": "gparted",
+          "nome": "GParted",
+          "desc": "Particionador de disco"
+        },
+        {
+          "pkg": "synaptic",
+          "nome": "Synaptic",
+          "desc": "Gerenciador grafico de pacotes"
+        },
+        {
+          "pkg": "timeshift",
+          "nome": "Timeshift",
+          "desc": "Pontos de restauracao do sistema"
+        }
+      ]
+    },
+    {
+      "nome": "Multimidia",
+      "itens": [
+        {
+          "pkg": "vlc",
+          "nome": "VLC",
+          "desc": "Toca praticamente qualquer video ou audio"
+        },
+        {
+          "pkg": "mpv",
+          "nome": "mpv",
+          "desc": "Reprodutor leve, bom para maquina modesta"
+        },
+        {
+          "pkg": "ffmpeg",
+          "nome": "FFmpeg",
+          "desc": "Converte e corta video e audio pelo terminal"
+        },
+        {
+          "pkg": "audacity",
+          "nome": "Audacity",
+          "desc": "Editor de audio"
+        },
+        {
+          "pkg": "obs-studio",
+          "nome": "OBS Studio",
+          "desc": "Grava a tela e transmite ao vivo"
+        }
+      ]
+    },
+    {
+      "nome": "Graficos e documentos",
+      "itens": [
+        {
+          "pkg": "gimp",
+          "nome": "GIMP",
+          "desc": "Editor de imagens"
+        },
+        {
+          "pkg": "inkscape",
+          "nome": "Inkscape",
+          "desc": "Desenho vetorial"
+        },
+        {
+          "pkg": "libreoffice",
+          "nome": "LibreOffice",
+          "desc": "Textos, planilhas e apresentacoes"
+        },
+        {
+          "pkg": "evince",
+          "nome": "Evince",
+          "desc": "Leitor de PDF leve"
+        },
+        {
+          "pkg": "okular",
+          "nome": "Okular",
+          "desc": "Leitor de PDF com anotacoes"
+        }
+      ]
+    },
+    {
+      "nome": "Internet",
+      "itens": [
+        {
+          "pkg": "chromium",
+          "nome": "Chromium",
+          "desc": "Navegador, a base livre do Chrome"
+        },
+        {
+          "pkg": "thunderbird",
+          "nome": "Thunderbird",
+          "desc": "Cliente de email"
+        },
+        {
+          "pkg": "deluge",
+          "nome": "Deluge",
+          "desc": "Cliente de torrent com interface e servico em segundo plano"
+        },
+        {
+          "pkg": "qbittorrent",
+          "nome": "qBittorrent",
+          "desc": "Cliente de torrent"
+        },
+        {
+          "pkg": "transmission-gtk",
+          "nome": "Transmission",
+          "desc": "Cliente de torrent, mais leve"
+        }
+      ]
+    },
+    {
+      "nome": "Desenvolvimento",
+      "itens": [
+        {
+          "pkg": "geany",
+          "nome": "Geany",
+          "desc": "Editor de codigo leve, com abas, realce de sintaxe e projetos. Em GTK, sem trazer KDE nem GNOME junto"
+        },
+        {
+          "pkg": "mousepad",
+          "nome": "Mousepad",
+          "desc": "Editor de texto do proprio XFCE, com realce de sintaxe. Costuma ja vir instalado"
+        },
+        {
+          "pkg": "build-essential",
+          "nome": "build-essential",
+          "desc": "Compilador C e ferramentas para compilar programas"
+        },
+        {
+          "pkg": "git-gui",
+          "nome": "git gui",
+          "desc": "Interface grafica para o git"
+        },
+        {
+          "pkg": "meld",
+          "nome": "Meld",
+          "desc": "Compara arquivos e pastas lado a lado"
+        },
+        {
+          "pkg": "sqlitebrowser",
+          "nome": "DB Browser for SQLite",
+          "desc": "Abre e edita bancos SQLite"
+        },
+        {
+          "pkg": "nodejs",
+          "nome": "Node.js",
+          "desc": "Ambiente JavaScript"
+        },
+        {
+          "pkg": "npm",
+          "nome": "npm",
+          "desc": "Gerenciador de pacotes do Node.js"
+        }
+      ]
+    },
+    {
+      "nome": "Fora do repositório oficial",
+      "aviso": "Estes não vêm do Debian. Instalar acrescenta um repositório de terceiro ao seu sistema, que passa a poder enviar atualizações para esta máquina.",
+      "itens": [
+        {
+          "pkg": "code",
+          "nome": "Visual Studio Code",
+          "desc": "Editor da Microsoft, com extensões e depurador",
+          "fonte": "microsoft-vscode",
+          "aviso": "Acrescenta o repositório da Microsoft ao apt e instala a chave de assinatura dele em /usr/share/keyrings/microsoft-vscode.gpg. A chave fica amarrada só a esse repositório, e não valida mais nada no sistema. A partir daí a Microsoft pode enviar atualizações do pacote code para esta máquina."
+        }
+      ]
+    }
+  ]
+}

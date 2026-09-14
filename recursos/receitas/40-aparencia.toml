@@ -1,0 +1,175 @@
+[modulo]
+id = "40"
+nome = "aparencia"
+titulo = "Tema, fontes, botoes e papel de parede"
+requer = ["30", "31"]
+afetada_por = ["tema", "destaque", "fonte_interface", "papel_de_parede"]
+
+[[passo]]
+tipo = "xfconf"
+dizer = "aplicando o tema @@gtk_tema@@ com a fonte @@fonte_ui@@"
+canal = "xsettings"
+chave = "/Net/ThemeName"
+valor = "@@gtk_tema@@"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xsettings"
+chave = "/Net/IconThemeName"
+valor = "@@icones@@"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xsettings"
+chave = "/Gtk/CursorThemeName"
+valor = "@@cursores@@"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xsettings"
+chave = "/Gtk/CursorThemeSize"
+tipo_valor = "int"
+valor = "24"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xsettings"
+chave = "/Gtk/FontName"
+valor = "@@fonte_ui@@ 10"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xsettings"
+chave = "/Gtk/MonospaceFontName"
+valor = "@@fonte_mono@@ 10"
+
+# botoes da janela a direita, preferencia do usuario; no macOS ficam a esquerda
+[[passo]]
+tipo = "xfconf"
+canal = "xsettings"
+chave = "/Gtk/DecorationLayout"
+valor = ":minimize,maximize,close"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xsettings"
+chave = "/Xft/HintStyle"
+valor = "hintslight"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xsettings"
+chave = "/Xft/RGBA"
+valor = "rgb"
+
+[[passo]]
+tipo = "xfconf"
+dizer = "ajustando o gerenciador de janelas"
+canal = "xfwm4"
+chave = "/general/theme"
+valor = "@@gtk_tema@@"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfwm4"
+chave = "/general/button_layout"
+valor = "|HMC"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfwm4"
+chave = "/general/title_alignment"
+valor = "center"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfwm4"
+chave = "/general/title_font"
+valor = "@@fonte_ui@@ Bold 9"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfwm4"
+chave = "/general/workspace_count"
+tipo_valor = "int"
+valor = "4"
+
+[[passo]]
+tipo = "arquivo"
+dizer = "arquivos de tema para programas que nao leem o xsettings"
+destino = "~/.config/gtk-3.0/settings.ini"
+modelo = "gtk3-settings.ini"
+
+[[passo]]
+tipo = "arquivo"
+destino = "~/.gtkrc-2.0"
+modelo = "gtkrc-2.0"
+
+# apps libadwaita, o seletor de arquivos do portal e o Firefox leem estas
+# chaves e nao o xsettings; sem elas abrem claros mesmo no tema escuro
+[[passo]]
+tipo = "comando"
+dizer = "avisando os apps GTK4 e o portal que o tema e @@tema@@"
+tolera_falha = true
+argumentos = ["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "@@gtk_esquema@@"]
+
+[[passo]]
+tipo = "comando"
+tolera_falha = true
+argumentos = ["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "@@gtk_tema@@"]
+
+[[passo]]
+tipo = "comando"
+tolera_falha = true
+argumentos = ["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", "@@icones@@"]
+
+[[passo]]
+tipo = "script"
+dizer = "ligando o tema ao GTK4, que so le ~/.config/gtk-4.0"
+tolera_falha = true
+corpo = '''
+# a variante com a cor pode nao ter sido gerada; a base sempre existe
+origem="$HOME/.themes/$D3_GTK_TEMA/gtk-4.0"
+[ -d "$origem" ] || origem="$HOME/.themes/$D3_GTK_TEMA_BASE/gtk-4.0"
+if [ ! -d "$origem" ]; then
+  echo "atencao: $origem nao existe, o GTK4 fica com o tema padrao"
+  exit 1
+fi
+mkdir -p "$HOME/.config/gtk-4.0"
+for f in assets gtk.css gtk-dark.css; do
+  alvo="$HOME/.config/gtk-4.0/$f"
+  # so troca link ou arquivo; uma pasta de verdade ali e do usuario
+  if [ -d "$alvo" ] && [ ! -L "$alvo" ]; then
+    echo "mantendo $alvo, que nao e um link"
+    continue
+  fi
+  ln -sfn "$origem/$f" "$alvo"
+done
+echo "GTK4 usando $(dirname "$origem" | xargs basename)"
+'''
+
+[[passo]]
+tipo = "script"
+dizer = "papel de parede"
+tolera_falha = true
+corpo = '''
+# o caminho ja vem resolvido pelo motor; vazio quer dizer "nao mexer"
+if [ -z "$D3_PAPEL_ARQUIVO" ]; then
+  echo "mantendo o papel de parede que voce escolheu"
+else
+  for p in $(xfconf-query -c xfce4-desktop -l | grep -E 'last-image$'); do
+    xfconf-query -c xfce4-desktop -p "$p" -s "$D3_PAPEL_ARQUIVO"
+  done
+  # a chave do monitor atual pode ainda nao existir
+  for mon in $(xrandr --query 2>/dev/null | awk '/ connected/{print $1}'); do
+    chave="/backdrop/screen0/monitor$mon/workspace0/last-image"
+    xfconf-query -c xfce4-desktop -p "$chave" -n -t string -s "$D3_PAPEL_ARQUIVO" 2>/dev/null \
+      || xfconf-query -c xfce4-desktop -p "$chave" -s "$D3_PAPEL_ARQUIVO" 2>/dev/null || true
+    xfconf-query -c xfce4-desktop -p "/backdrop/screen0/monitor$mon/workspace0/image-style" \
+      -n -t int -s 5 2>/dev/null || true
+  done
+  echo "papel de parede: $(basename "$D3_PAPEL_ARQUIVO")"
+fi
+# o xfdesktop nao repinta sozinho quando a chave muda por fora da interface
+xfdesktop --reload >/dev/null 2>&1 || true
+'''

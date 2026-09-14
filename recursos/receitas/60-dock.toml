@@ -1,0 +1,110 @@
+[modulo]
+id = "60"
+nome = "dock"
+titulo = "Dock inferior"
+afetada_por = ["dock"]
+
+[[passo]]
+tipo = "script"
+se = "dock != sim"
+dizer = "desligando o dock"
+tolera_falha = true
+corpo = '''
+pkill -x plank 2>/dev/null || true
+rm -f "$HOME/.config/autostart/plank.desktop"
+echo "dock desligado; o pacote continua instalado, religar e imediato"
+'''
+
+[[passo]]
+tipo = "script"
+se = "dock == sim"
+dizer = "instalando e configurando o dock"
+corpo = '''
+# O plank-reloaded instala o executavel como /usr/bin/plank e declara conflito
+# com o pacote plank. Detectar pelo binario faria o instalador trocar o fork
+# pelo original. Por isso a deteccao e sempre pelo nome do pacote.
+instalado(){ [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+
+pacote=""
+if instalado plank-reloaded; then
+  pacote=plank-reloaded
+else
+  api="$(curl -fsSL https://api.github.com/repos/zquestz/plank-reloaded/releases/latest || true)"
+  url="$(printf '%s' "$api" | grep -oE 'https://[^"]*debian[^"]*amd64\.deb' | sed -n 1p)"
+  if [ -n "$url" ]; then
+    deb="$D3_FONTES/$(basename "$url")"
+    [ -s "$deb" ] || curl -fsSL -o "$deb" "$url" || true
+    if [ -s "$deb" ] && sudo -n apt-get install -y "$deb" >/dev/null 2>&1; then
+      instalado plank-reloaded && pacote=plank-reloaded
+    fi
+  fi
+  if [ -z "$pacote" ]; then
+    echo "plank-reloaded indisponivel, usando o plank do Debian"
+    sudo -n apt-get install -y plank >/dev/null 2>&1 || true
+    instalado plank && pacote=plank
+  fi
+fi
+[ -n "$pacote" ] || { echo "nenhum dock disponivel"; exit 1; }
+echo "dock: $pacote"
+
+cfg="$HOME/.config/plank/dock1"
+mkdir -p "$cfg"
+for tema in "$HOME/.local/share/plank/themes" "$HOME/.local/share/plank-reloaded/themes"; do
+  mkdir -p "$tema/WhiteSur"
+  cp -f "$D3_ARQUIVOS/plank-dock.theme" "$tema/WhiteSur/dock.theme"
+done
+
+itens=""
+add(){
+  for base in /usr/share/applications "$HOME/.local/share/applications"; do
+    if [ -f "$base/$1" ]; then
+      printf '[PlankDockItemPreferences]\nLauncher=file://%s/%s\n' "$base" "$1" \
+        > "$cfg/${1%.desktop}.dockitem"
+      itens="$itens${1%.desktop}.dockitem;;"
+      return 0
+    fi
+  done
+  return 1
+}
+add firefox-esr.desktop || add firefox.desktop || true
+add thunar.desktop || true
+add xfce4-terminal.desktop || true
+add org.xfce.mousepad.desktop || add mousepad.desktop || true
+add xfce4-appfinder.desktop || true
+add xfce4-settings-manager.desktop || true
+
+cat > "$cfg/settings" <<CFGEOF
+[PlankDockPreferences]
+CurrentWorkspaceOnly=false
+IconSize=44
+HideMode=1
+UnhideDelay=0
+HideDelay=0
+Monitor=
+DockItems=$itens
+Position=3
+Offset=0
+Theme=WhiteSur
+Alignment=3
+ItemsAlignment=3
+LockItems=false
+PressureReveal=false
+ShowDockItem=false
+ZoomEnabled=true
+ZoomPercent=145
+CFGEOF
+echo "dock configurado"
+'''
+
+[[passo]]
+tipo = "autostart"
+se = "dock == sim"
+id = "plank"
+nome = "Dock"
+comando = "plank"
+
+[[passo]]
+tipo = "processo"
+se = "dock == sim"
+nome = "plank"
+acao = "reiniciar"

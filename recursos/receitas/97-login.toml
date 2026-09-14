@@ -1,0 +1,122 @@
+[modulo]
+id = "97"
+nome = "login"
+titulo = "Tela de login e de bloqueio"
+requer = ["30"]
+afetada_por = ["destaque", "fonte_interface", "papel_de_parede",
+               "login_fundo", "login_desfoque", "login_usuarios"]
+
+# Os arquivos sao montados primeiro em @@login_dir@@, que e do usuario, e so
+# depois levados para o sistema. A previa roda estes mesmos passos com
+# login_instalar = nao e outra pasta, entao o que ela mostra e exatamente o
+# que seria instalado.
+
+[[passo]]
+tipo = "apt"
+se = "login_instalar == sim"
+pacotes = ["lightdm-gtk-greeter"]
+
+# comeca de pasta vazia: sobra de uma execucao interrompida iria parar nas
+# copias de seguranca
+[[passo]]
+tipo = "comando"
+argumentos = ["rm", "-rf", "@@login_dir@@"]
+
+[[passo]]
+tipo = "arquivo"
+dizer = "montando o tema da tela de login"
+destino = "@@login_dir@@/share/themes/d3bian-login/gtk-3.0/gtk.css"
+modelo = "login-gtk.css"
+
+[[passo]]
+tipo = "arquivo"
+destino = "@@login_dir@@/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf"
+modelo = "login-greeter.conf"
+
+[[passo]]
+tipo = "arquivo"
+destino = "@@login_dir@@/lightdm.conf.d/90-d3bian.conf"
+conteudo = '''
+# Escrito pelo d3bian-init.
+[Seat:*]
+greeter-session=lightdm-gtk-greeter
+# true mostra os campos de nome e senha; false, a lista de usuarios
+greeter-hide-users=@@login_esconder_usuarios@@
+greeter-show-manual-login=true
+user-session=xfce
+'''
+
+[[passo]]
+tipo = "script"
+dizer = "preparando o fundo e a foto"
+corpo = '''
+d="$D3_LOGIN_DIR"
+mkdir -p "$d"
+rm -f "$d/fundo.jpg" "$d/avatar.png"
+
+origem="$D3_LOGIN_FUNDO_ARQUIVO"
+if [ -n "$origem" ] && [ -f "$origem" ]; then
+  if [ "$D3_LOGIN_DESFOQUE" = "sim" ]; then
+    # reduzir antes de desfocar deixa o desfoque rapido; o greeter estica de volta
+    convert "$origem[0]" -resize '1920x1200^' -blur 0x24 -fill black -colorize 14% \
+            -quality 88 "$d/fundo.jpg"
+  else
+    convert "$origem[0]" -resize '2560x1600>' -quality 90 "$d/fundo.jpg"
+  fi
+  echo "fundo: $(basename "$origem")$([ "$D3_LOGIN_DESFOQUE" = "sim" ] && echo ', desfocado')"
+else
+  convert -size 1920x1200 gradient:'#2a3a52'-'#0b0f16' "$d/fundo.jpg"
+  echo "nao achei imagem de fundo; usando um degrade escuro"
+fi
+
+# foto redonda. O svg do logo nao tem fundo, entao ganha um disco de vidro
+avatar="$D3_LOGIN_AVATAR_ARQUIVO"
+mascara=( \( -size 256x256 xc:none -fill white -draw 'circle 128,128 128,1' \) -compose DstIn -composite )
+case "$avatar" in
+  *.svg)
+    convert -background none -density 384 "$avatar" -resize 140x140 \
+            -gravity center -background 'rgba(255,255,255,0.18)' -extent 256x256 \
+            "${mascara[@]}" "$d/avatar.png" ;;
+  *)
+    convert "$avatar[0]" -resize '256x256^' -gravity center -extent 256x256 \
+            "${mascara[@]}" "$d/avatar.png" ;;
+esac
+echo "foto: $(basename "$avatar")"
+'''
+
+[[passo]]
+tipo = "backup"
+se = "login_instalar == sim"
+caminhos = ["/etc/lightdm/lightdm.conf.d/90-d3bian.conf"]
+
+[[passo]]
+tipo = "script"
+se = "login_instalar == sim"
+dizer = "levando para o sistema"
+corpo = '''
+d="$D3_LOGIN_DIR"
+tema=/usr/share/themes/d3bian-login
+sudo -n install -d -m 755 "$D3_LOGIN_RAIZ" "$tema/gtk-3.0" \
+     /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d /etc/lightdm/lightdm.conf.d
+sudo -n install -m 644 "$d/fundo.jpg" "$d/avatar.png" "$D3_LOGIN_RAIZ/"
+sudo -n install -m 644 "$d/share/themes/d3bian-login/gtk-3.0/gtk.css" "$tema/gtk-3.0/gtk.css"
+sudo -n install -m 644 "$d/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf" \
+     /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/
+sudo -n install -m 644 "$d/lightdm.conf.d/90-d3bian.conf" /etc/lightdm/lightdm.conf.d/
+rm -rf "$d"
+
+# Nao confunda "nao consegui verificar" com "deu errado": o lightdm --show-config
+# exige root, e o greeter em uso so muda quando o LightDM reinicia, porque ele
+# le a configuracao uma unica vez, ao iniciar.
+saida="$(sudo -n lightdm --show-config 2>&1 || true)"
+if [ -z "$saida" ]; then
+  echo "configurado; nao deu para verificar sem root"
+elif printf '%s\n' "$saida" | grep -q 'greeter-session=lightdm-gtk-greeter'; then
+  echo "configurado e confirmado pelo lightdm"
+else
+  echo "atencao: o lightdm resolveu outro greeter, confira /etc/lightdm/lightdm.conf.d"
+fi
+echo "a tela de bloqueio muda na hora; a de login, no proximo reinicio"
+echo "se o login falhar, va ao modo texto com Ctrl+Alt+F2 e rode:"
+echo "  sudo rm /etc/lightdm/lightdm.conf.d/90-d3bian.conf && sudo systemctl restart lightdm"
+'''

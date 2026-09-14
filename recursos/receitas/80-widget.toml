@@ -1,0 +1,42 @@
+[modulo]
+id = "80"
+nome = "widget"
+titulo = "Widget de relogio e status na area de trabalho"
+afetada_por = ["widget", "fonte_interface"]
+
+[[passo]]
+tipo = "processo"
+se = "widget != sim"
+nome = "conky"
+acao = "parar"
+
+[[passo]]
+tipo = "autostart"
+se = "widget != sim"
+id = "conky"
+remover = true
+
+[[passo]]
+tipo = "apt"
+se = "widget == sim"
+pacotes = ["conky-all"]
+
+[[passo]]
+tipo = "arquivo"
+se = "widget == sim"
+destino = "~/.config/conky/d3bian.conf"
+modelo = "conky.conf"
+
+[[passo]]
+tipo = "autostart"
+se = "widget == sim"
+id = "conky"
+nome = "Widget da area de trabalho"
+comando = "conky -c @@HOME@@/.config/conky/d3bian.conf"
+
+[[passo]]
+tipo = "processo"
+se = "widget == sim"
+nome = "conky"
+acao = "reiniciar"
+argumentos = ["conky", "-c", "@@HOME@@/.config/conky/d3bian.conf"]

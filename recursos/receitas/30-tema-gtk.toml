@@ -1,0 +1,41 @@
+[modulo]
+id = "30"
+nome = "tema-gtk"
+titulo = "Tema WhiteSur das janelas"
+requer = ["10"]
+afetada_por = ["destaque"]
+
+[[passo]]
+tipo = "git"
+url = "https://github.com/vinceliuice/WhiteSur-gtk-theme.git"
+ref = "master"
+destino = "@@fontes@@/WhiteSur-gtk-theme"
+
+[[passo]]
+tipo = "script"
+dizer = "compilando e instalando, a parte mais demorada"
+corpo = '''
+cd "$D3_FONTES/WhiteSur-gtk-theme"
+# --silent-mode exige root, entao nao entra aqui
+bash ./install.sh -c light -c dark -t "$D3_DESTAQUE_EXTERNO" -o normal -a normal --round
+'''
+
+[[passo]]
+tipo = "script"
+dizer = "copiando para /usr/share/themes, que a tela de login precisa"
+tolera_falha = true
+corpo = '''
+# leva tambem a variante com a cor escolhida, que e a que sera usada
+for t in "$HOME/.themes/WhiteSur-Light$D3_GTK_SUFIXO" \
+         "$HOME/.themes/WhiteSur-Dark$D3_GTK_SUFIXO" \
+         "$HOME/.themes/WhiteSur-Light" "$HOME/.themes/WhiteSur-Dark"; do
+  [ -d "$t" ] || continue
+  sudo -n rm -rf "/usr/share/themes/$(basename "$t")"
+  sudo -n cp -a "$t" /usr/share/themes/
+done
+if [ ! -d "$HOME/.themes/$D3_GTK_TEMA" ]; then
+  echo "atencao: esperava o tema $D3_GTK_TEMA e ele nao foi gerado"
+  exit 1
+fi
+echo "tema em uso: $D3_GTK_TEMA"
+'''

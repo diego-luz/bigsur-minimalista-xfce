@@ -1,0 +1,74 @@
+<title>d3bian-init</title>
+<link rel="stylesheet" href="estilo.css">
+<script src="comum.js"></script>
+
+<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
+
+<h1>d3bian-init</h1>
+<p class="caminho">/</p>
+<p class="sub">Painel local para preparar e ajustar este Debian. Escolha por onde começar.</p>
+
+<div class="faixa" id="situacao" hidden>
+  <span class="pt"></span><span id="situacaoTexto"></span>
+</div>
+
+<div class="cartoes">
+  <a class="porta" href="aparencia.html">
+    <div class="ico">🎨</div>
+    <h3>Aparência do desktop</h3>
+    <p>Tema claro ou escuro, barra de menus no topo, dock, widget na área de trabalho,
+       encaixe de janelas e efeitos. Com prévia da sua própria tela.</p>
+    <div class="seta">Abrir &rarr;</div>
+  </a>
+
+  <a class="porta" href="programas.html">
+    <div class="ico">📦</div>
+    <h3>Programas úteis</h3>
+    <p>Uma lista pronta de programas bons, separados por categoria, só do repositório
+       oficial do Debian. Marque e instale de uma vez.</p>
+    <div class="seta">Abrir &rarr;</div>
+  </a>
+</div>
+
+<p class="rodape">
+  Esta página roda no seu computador, em <code>127.0.0.1</code>, e não fica acessível pela
+  rede. Tudo que ela faz também dá pelo terminal, com <code>d3bian-init --help</code>.
+  A senha de administrador é digitada no terminal que abriu o painel, nunca aqui.
+</p>
+
+<div class="acoes">
+  <button class="bt sec" id="btSair">Encerrar o painel</button>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+fetch("/api/estado").then(r => r.json()).then(d => {
+  const faixa = $("#situacao"), txt = $("#situacaoTexto");
+  const total = (d.receitas || []).length;
+  const faltam = (d.receitas || []).filter(r => !r.aplicada).length;
+  if (d.instalado === false){
+    faixa.className = "faixa atencao";
+    txt.textContent = "Esta máquina ainda não foi preparada. Comece por Aparência do "
+                    + "desktop, que é onde fica a instalação completa.";
+  } else if (faltam > 0){
+    faixa.className = "faixa atencao";
+    txt.textContent = `Desktop preparado, com ${faltam} de ${total} etapas ainda pendentes.`;
+  } else {
+    faixa.className = "faixa";
+    txt.textContent = `Desktop preparado, todas as ${total} etapas aplicadas.`;
+  }
+  faixa.hidden = false;
+}).catch(() => {});
+
+$("#btSair").addEventListener("click", async () => {
+  await fetch("/api/sair", {method: "POST"}).catch(() => {});
+  document.body.textContent = "";
+  const cx = document.createElement("div");
+  cx.style.cssText = "text-align:center;padding:90px 20px";
+  const h = document.createElement("h1"); h.textContent = "Painel encerrado";
+  const p = document.createElement("p"); p.className = "sub";
+  p.textContent = "Pode fechar esta aba. Para abrir de novo, rode d3bian-init no terminal.";
+  cx.appendChild(h); cx.appendChild(p); document.body.appendChild(cx);
+});
+</script>

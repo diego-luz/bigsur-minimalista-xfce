@@ -1,0 +1,119 @@
+/* Tela de login do d3bian-init.
+   Tema proprio por cima do WhiteSur escuro, no desenho do macOS: fundo da
+   foto, foto redonda no centro, campos de vidro e nada de caixa em volta.
+   A tela de bloqueio e o mesmo greeter, entao herda tudo daqui.
+
+   O lightdm-gtk-greeter poe a foto do usuario a esquerda dos campos, numa
+   grade que o CSS nao reorganiza. Por isso a imagem dele fica escondida na
+   configuracao, e a foto e desenhada como fundo do quadro, acima dos campos. */
+
+@import url("@@login_tema_base@@");
+
+/* o WhiteSur pinta o texto de exemplo com a cor de destaque */
+@define-color placeholder_text_color rgba(255, 255, 255, 0.62);
+
+/* ---- barra do topo, transparente como no macOS ---- */
+#panel_window {
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+#panel_window menubar,
+#panel_window menubar > menuitem {
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+/* ---- janela de login, sem caixa ---- */
+#login_window {
+  background-color: transparent;
+  box-shadow: none;
+  border: none;
+}
+#content_frame {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 150px 10px 4px 10px;
+  background-image: url("@@login_raiz@@/avatar.png");
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 128px 128px;
+}
+#content_frame > border,
+#buttonbox_frame > border { border: none; }
+#buttonbox_frame {
+  background-color: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  padding-top: 4px;
+}
+
+/* ---- nome do usuario, quando aparece a lista ---- */
+#login_window #user_combobox,
+#login_window #user_combobox button {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- campos em pilula ---- */
+#login_window entry {
+  min-width: 250px;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 3px 16px;
+  background-image: none;
+  background-color: rgba(255, 255, 255, 0.16);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: none;
+  caret-color: white;
+}
+#login_window entry:focus {
+  background-color: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* ---- botoes ---- */
+#login_window button,
+#power_window button {
+  border-radius: 999px;
+  background-image: none;
+  background-color: rgba(255, 255, 255, 0.14);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+  min-width: 90px;
+}
+#login_window button:hover,
+#power_window button:hover { background-color: rgba(255, 255, 255, 0.24); }
+
+/* ---- senha errada ---- */
+#greeter_infobar {
+  border-radius: 12px;
+  border: none;
+  background-color: rgba(200, 40, 55, 0.55);
+  color: white;
+}
+#greeter_infobar box { background: transparent; border: none; }
+
+/* ---- pergunta de desligar e reiniciar ---- */
+#power_window {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+#power_content_frame,
+#power_buttonbox_frame {
+  background-color: rgba(30, 30, 34, 0.72);
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  color: white;
+}
+#power_content_frame { border-radius: 14px 14px 0 0; padding: 18px; }
+#power_buttonbox_frame { border-radius: 0 0 14px 14px; padding: 12px 18px; }

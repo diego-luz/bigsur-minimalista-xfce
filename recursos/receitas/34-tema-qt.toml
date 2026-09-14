@@ -1,0 +1,49 @@
+[modulo]
+id = "34"
+nome = "tema-qt"
+titulo = "Tema WhiteSur nos programas Qt"
+requer = ["10"]
+afetada_por = ["tema"]
+
+# kvantum desenha os controles; o platformtheme gtk3 traz do GTK os icones, as
+# fontes e o seletor de arquivos, e assim acompanha a troca de tema sozinho
+[[passo]]
+tipo = "apt"
+dizer = "instalando o Kvantum"
+pacotes = ["qt-style-kvantum", "qt5-gtk-platformtheme", "qt6-gtk-platformtheme"]
+
+[[passo]]
+tipo = "git"
+url = "https://github.com/vinceliuice/WhiteSur-kde.git"
+ref = "master"
+destino = "@@fontes@@/WhiteSur-kde"
+
+# o install.sh do WhiteSur-kde instala tambem coisas do Plasma; aqui so
+# interessa a pasta do Kvantum
+[[passo]]
+tipo = "copiar"
+dizer = "copiando o tema do Kvantum"
+origem = "@@fontes@@/WhiteSur-kde/Kvantum/WhiteSur"
+destino = "~/.config/Kvantum/WhiteSur"
+
+[[passo]]
+tipo = "arquivo"
+dizer = "usando a variante @@kvantum_tema@@"
+destino = "~/.config/Kvantum/kvantum.kvconfig"
+conteudo = '''
+[General]
+theme=@@kvantum_tema@@
+'''
+
+# o Xsession do Debian le o ~/.xsessionrc; o ~/.xprofile e o environment.d
+# nao chegam a sessao do XFCE
+[[passo]]
+tipo = "bloco"
+dizer = "fazendo os programas Qt usarem o Kvantum"
+destino = "~/.xsessionrc"
+marca = "d3bian-init: tema qt"
+comentario = "#"
+conteudo = '''
+export QT_STYLE_OVERRIDE=kvantum
+export QT_QPA_PLATFORMTHEME=gtk3
+'''

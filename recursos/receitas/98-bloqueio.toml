@@ -1,0 +1,115 @@
+[modulo]
+id = "98"
+nome = "bloqueio"
+titulo = "Bloqueio de tela"
+afetada_por = ["bloqueio"]
+
+# Quem bloqueia e o light-locker, que ja vem no Debian com XFCE. Ele nao
+# desenha tela propria: devolve o monitor ao LightDM, entao o bloqueio usa o
+# mesmo greeter da tela de login, com o mesmo visual.
+#
+# O tempo ate bloquear e o do protetor de tela do X. O light-locker bloqueia
+# quando ele entra, com cinco segundos de folga para mexer o mouse. O
+# xfce4-power-manager 4.20 nao tem mais chave para esse tempo, dai o xset.
+
+# ---- com bloqueio ----------------------------------------------------------
+
+[[passo]]
+tipo = "apt"
+se = "bloqueio != nao"
+pacotes = ["light-locker"]
+
+[[passo]]
+tipo = "comando"
+se = "bloqueio != nao"
+dizer = "bloqueio depois de @@bloqueio@@ minutos parado, ao suspender e ao fechar a tampa"
+tolera_falha = true
+argumentos = ["gsettings", "set", "apps.light-locker", "lock-after-screensaver", "5"]
+
+[[passo]]
+tipo = "comando"
+se = "bloqueio != nao"
+tolera_falha = true
+argumentos = ["gsettings", "set", "apps.light-locker", "lock-on-suspend", "true"]
+
+[[passo]]
+tipo = "comando"
+se = "bloqueio != nao"
+tolera_falha = true
+argumentos = ["gsettings", "set", "apps.light-locker", "lock-on-lid", "true"]
+
+[[passo]]
+tipo = "xfconf"
+se = "bloqueio != nao"
+canal = "xfce4-power-manager"
+chave = "/xfce4-power-manager/lock-screen-suspend-hibernate"
+tipo_valor = "bool"
+valor = "true"
+
+# o xset nao sobrevive ao fim da sessao; o autostart refaz a cada entrada
+[[passo]]
+tipo = "autostart"
+se = "bloqueio != nao"
+id = "d3bian-bloqueio"
+nome = "Tempo ate bloquear a tela"
+comando = "xset s @@bloqueio_segundos@@ @@bloqueio_segundos@@"
+
+[[passo]]
+tipo = "comando"
+se = "bloqueio != nao"
+tolera_falha = true
+argumentos = ["xset", "s", "@@bloqueio_segundos@@", "@@bloqueio_segundos@@"]
+
+# o unico light-locker.desktop na pasta do usuario e o que o "nao" escreve
+[[passo]]
+tipo = "autostart"
+se = "bloqueio != nao"
+id = "light-locker"
+remover = true
+
+[[passo]]
+tipo = "processo"
+se = "bloqueio != nao"
+nome = "light-locker"
+acao = "reiniciar"
+
+# ---- sem bloqueio ----------------------------------------------------------
+
+[[passo]]
+tipo = "arquivo"
+se = "bloqueio == nao"
+dizer = "desligando o bloqueio automatico"
+destino = "~/.config/autostart/light-locker.desktop"
+conteudo = '''
+[Desktop Entry]
+Type=Application
+Name=Screen Locker
+Exec=light-locker
+Hidden=true
+'''
+
+[[passo]]
+tipo = "autostart"
+se = "bloqueio == nao"
+id = "d3bian-bloqueio"
+remover = true
+
+[[passo]]
+tipo = "comando"
+se = "bloqueio == nao"
+tolera_falha = true
+argumentos = ["gsettings", "set", "apps.light-locker", "lock-on-suspend", "false"]
+
+[[passo]]
+tipo = "xfconf"
+se = "bloqueio == nao"
+canal = "xfce4-power-manager"
+chave = "/xfce4-power-manager/lock-screen-suspend-hibernate"
+tipo_valor = "bool"
+valor = "false"
+
+[[passo]]
+tipo = "processo"
+se = "bloqueio == nao"
+nome = "light-locker"
+acao = "parar"

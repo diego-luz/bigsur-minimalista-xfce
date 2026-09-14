@@ -1,0 +1,171 @@
+[modulo]
+id = "38"
+nome = "painel"
+titulo = "Barra do topo, estilo macOS"
+requer = ["10"]
+afetada_por = ["tema", "logo", "menu_global", "titulo_no_painel"]
+
+# Roda antes da aparencia de proposito: este passo reinicia o xfconfd, e um
+# ajuste gravado por outra receita logo antes correria o risco de se perder.
+
+[[passo]]
+tipo = "apt"
+se = "titulo_no_painel == sim"
+pacotes = ["xfce4-windowck-plugin"]
+
+[[passo]]
+tipo = "script"
+dizer = "montando a barra do topo"
+corpo = '''
+xml="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+mkdir -p "$(dirname "$xml")"
+
+# menu global: so entra se o plugin existir
+appmenu=""
+if [ "$D3_MENU_GLOBAL" = "sim" ]; then
+  for f in /usr/share/xfce4/panel/plugins/*appmenu*.desktop; do
+    [ -f "$f" ] && appmenu="$(basename "$f" .desktop)" && break
+  done
+  [ -n "$appmenu" ] || echo "plugin de menu global ausente, barra montada sem ele"
+fi
+
+# titulo e botoes da janela maximizada dentro da barra
+windowck=0
+if [ "$D3_TITULO_NO_PAINEL" = "sim" ]; then
+  if ls /usr/share/xfce4/panel/plugins/*windowck*.desktop >/dev/null 2>&1; then
+    windowck=1
+  else
+    echo "plugin windowck ausente, barra montada sem ele"
+  fi
+fi
+
+plugins="whiskermenu"
+[ "$windowck" = "1" ] && plugins="$plugins windowck-buttons windowck-title"
+[ -n "$appmenu" ] && plugins="$plugins $appmenu"
+plugins="$plugins separador-expande systray separador pulseaudio separador power-manager-plugin separador clock separador actions"
+
+set -- $D3_PAINEL_FUNDO
+pr="$1"; pg="$2"; pb="$3"; pa="$4"
+escuro=false; [ "$D3_TEMA" = "escuro" ] && escuro=true
+
+ids=""; blocos=""; i=0
+for p in $plugins; do
+  i=$((i+1))
+  ids="$ids        <value type=\"int\" value=\"$i\"/>
+"
+  case "$p" in
+    whiskermenu)
+      blocos="$blocos    <property name=\"plugin-$i\" type=\"string\" value=\"whiskermenu\">
+      <property name=\"button-icon\" type=\"string\" value=\"$D3_LOGO_ARQUIVO\"/>
+      <property name=\"show-button-icon\" type=\"bool\" value=\"true\"/>
+      <property name=\"show-button-title\" type=\"bool\" value=\"false\"/>
+      <property name=\"menu-width\" type=\"int\" value=\"460\"/>
+      <property name=\"menu-height\" type=\"int\" value=\"560\"/>
+      <property name=\"item-icon-size\" type=\"int\" value=\"2\"/>
+      <property name=\"category-icon-size\" type=\"int\" value=\"1\"/>
+      <property name=\"launcher-show-description\" type=\"bool\" value=\"false\"/>
+      <property name=\"position-search-alternate\" type=\"bool\" value=\"true\"/>
+      <property name=\"position-commands-alternate\" type=\"bool\" value=\"true\"/>
+      <property name=\"load-hierarchy\" type=\"bool\" value=\"true\"/>
+    </property>
+" ;;
+    separador-expande)
+      blocos="$blocos    <property name=\"plugin-$i\" type=\"string\" value=\"separator\">
+      <property name=\"expand\" type=\"bool\" value=\"true\"/>
+      <property name=\"style\" type=\"uint\" value=\"0\"/>
+    </property>
+" ;;
+    separador)
+      blocos="$blocos    <property name=\"plugin-$i\" type=\"string\" value=\"separator\">
+      <property name=\"expand\" type=\"bool\" value=\"false\"/>
+      <property name=\"style\" type=\"uint\" value=\"0\"/>
+    </property>
+" ;;
+    systray)
+      blocos="$blocos    <property name=\"plugin-$i\" type=\"string\" value=\"systray\">
+      <property name=\"square-icons\" type=\"bool\" value=\"true\"/>
+      <property name=\"symbolic-icons\" type=\"bool\" value=\"true\"/>
+    </property>
+" ;;
+    clock)
+      # layout 3 e "so o campo de hora"; o formato ja traz data e hora juntas,
+      # entao fica tudo em uma linha
+      blocos="$blocos    <property name=\"plugin-$i\" type=\"string\" value=\"clock\">
+      <property name=\"mode\" type=\"uint\" value=\"2\"/>
+      <property name=\"digital-layout\" type=\"uint\" value=\"3\"/>
+      <property name=\"digital-time-format\" type=\"string\" value=\"%a %d %b  %H:%M\"/>
+      <property name=\"digital-format\" type=\"string\" value=\"%a %d %b  %H:%M\"/>
+      <property name=\"tooltip-format\" type=\"string\" value=\"%A, %d de %B de %Y\"/>
+    </property>
+" ;;
+    actions)
+      blocos="$blocos    <property name=\"plugin-$i\" type=\"string\" value=\"actions\">
+      <property name=\"appearance\" type=\"uint\" value=\"1\"/>
+      <property name=\"ask-confirmation\" type=\"bool\" value=\"true\"/>
+    </property>
+" ;;
+    *)
+      blocos="$blocos    <property name=\"plugin-$i\" type=\"string\" value=\"$p\"/>
+" ;;
+  esac
+done
+
+cat > "$xml" <<XMLEOF
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-panel" version="1.0">
+  <property name="configver" type="int" value="2"/>
+  <property name="panels" type="array">
+    <value type="int" value="1"/>
+    <property name="dark-mode" type="bool" value="$escuro"/>
+    <property name="panel-1" type="empty">
+      <property name="position" type="string" value="p=6;x=0;y=0"/>
+      <property name="position-locked" type="bool" value="true"/>
+      <property name="length" type="double" value="100"/>
+      <property name="length-adjust" type="bool" value="true"/>
+      <property name="size" type="uint" value="30"/>
+      <property name="icon-size" type="uint" value="16"/>
+      <property name="nrows" type="uint" value="1"/>
+      <property name="mode" type="uint" value="0"/>
+      <property name="background-style" type="uint" value="1"/>
+      <property name="background-rgba" type="array">
+        <value type="double" value="$pr"/>
+        <value type="double" value="$pg"/>
+        <value type="double" value="$pb"/>
+        <value type="double" value="$pa"/>
+      </property>
+      <property name="enter-opacity" type="uint" value="100"/>
+      <property name="leave-opacity" type="uint" value="100"/>
+      <property name="autohide-behavior" type="uint" value="0"/>
+      <property name="plugin-ids" type="array">
+$ids      </property>
+    </property>
+  </property>
+  <property name="plugins" type="empty">
+$blocos  </property>
+</channel>
+XMLEOF
+
+xfce4-panel --quit >/dev/null 2>&1 || true
+sleep 2
+pkill -x xfconfd 2>/dev/null || true
+sleep 1
+setsid --fork xfce4-panel >/dev/null 2>&1 </dev/null
+sleep 2
+echo "barra montada com: $plugins"
+'''
+
+[[passo]]
+tipo = "bloco"
+dizer = "cor do texto e folga entre os itens da barra"
+destino = "~/.config/gtk-3.0/gtk.css"
+marca = "d3bian-init painel"
+conteudo = '''
+/* O WhiteSur pinta o texto da barra sempre de branco, e a opcao de modo
+   claro do painel nao muda isso. Sem esta regra, barra clara fica ilegivel. */
+.xfce4-panel.background,
+.xfce4-panel.background label,
+.xfce4-panel.background button label,
+.xfce4-panel.background image { color: @@painel_texto@@; }
+.xfce4-panel button,
+.xfce4-panel widget { padding-left: 5px; padding-right: 5px; }
+'''

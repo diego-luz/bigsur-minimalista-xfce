@@ -1,0 +1,36 @@
+[modulo]
+id = "31"
+nome = "icones"
+titulo = "Icones WhiteSur"
+requer = ["10"]
+
+[[passo]]
+tipo = "git"
+url = "https://github.com/vinceliuice/WhiteSur-icon-theme.git"
+ref = "master"
+destino = "@@fontes@@/WhiteSur-icon-theme"
+
+[[passo]]
+tipo = "script"
+dizer = "instalando os icones"
+corpo = '''
+cd "$D3_FONTES/WhiteSur-icon-theme"
+bash ./install.sh -t default -a -b
+# o WhiteSur busca no breeze o que nao tem, mas o breeze nao vem no XFCE e
+# o icone some; o Adwaita e dependencia do GTK e esta sempre instalado
+for t in "$HOME/.local/share/icons/WhiteSur" \
+         "$HOME/.local/share/icons/WhiteSur-dark" \
+         "$HOME/.local/share/icons/WhiteSur-light"; do
+  [ -f "$t/index.theme" ] || continue
+  sed -i 's/^Inherits=.*/Inherits=hicolor,Adwaita/' "$t/index.theme"
+done
+for t in "$HOME/.local/share/icons/WhiteSur" \
+         "$HOME/.local/share/icons/WhiteSur-dark" \
+         "$HOME/.local/share/icons/WhiteSur-light"; do
+  [ -d "$t" ] || continue
+  sudo -n rm -rf "/usr/share/icons/$(basename "$t")" 2>/dev/null || true
+  sudo -n cp -a "$t" /usr/share/icons/ 2>/dev/null || true
+done
+gtk-update-icon-cache -f "$HOME/.local/share/icons/WhiteSur" >/dev/null 2>&1 || true
+echo "icones instalados"
+'''

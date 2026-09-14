@@ -1,0 +1,38 @@
+[modulo]
+id = "00"
+nome = "backup"
+titulo = "Copia de seguranca do que existe hoje"
+afetada_por = []
+
+[[passo]]
+tipo = "backup"
+dizer = "guardando a configuracao atual"
+caminhos = [
+  "~/.config/xfce4",
+  "~/.config/autostart",
+  "~/.config/gtk-3.0",
+  "~/.config/gtk-4.0",
+  "~/.config/Kvantum",
+  "~/.config/plank",
+  "~/.config/rofi",
+  "~/.config/conky",
+  "~/.config/picom.conf",
+  "~/.gtkrc-2.0",
+  "~/.xsessionrc",
+  "/etc/lightdm",
+]
+
+[[passo]]
+tipo = "script"
+dizer = "anotando o estado do xfconf, util para consulta depois"
+tolera_falha = true
+corpo = '''
+destino="${XDG_STATE_HOME:-$HOME/.local/state}/d3bian-init/backup/xfconf"
+mkdir -p "$destino"
+xfconf-query -l | tail -n +2 | while read -r canal; do
+  canal="$(printf '%s' "$canal" | tr -d ' ')"
+  [ -n "$canal" ] && xfconf-query -c "$canal" -lv > "$destino/$canal.txt" 2>/dev/null
+done
+dpkg-query -W -f='${binary:Package}\n' > "$destino/../pacotes-antes.txt" 2>/dev/null || true
+echo "estado do xfconf anotado"
+'''

@@ -1,0 +1,5 @@
+gtk-theme-name="@@gtk_tema@@"
+gtk-icon-theme-name="@@icones@@"
+gtk-cursor-theme-name="@@cursores@@"
+gtk-cursor-theme-size=24
+gtk-font-name="@@fonte_ui@@ 10"

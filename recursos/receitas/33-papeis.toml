@@ -1,0 +1,23 @@
+[modulo]
+id = "33"
+nome = "papeis"
+titulo = "Papeis de parede Big Sur"
+requer = ["10"]
+
+[[passo]]
+tipo = "git"
+url = "https://github.com/vinceliuice/WhiteSur-wallpapers.git"
+ref = "main"
+destino = "@@fontes@@/WhiteSur-wallpapers"
+
+[[passo]]
+tipo = "script"
+dizer = "copiando os papeis de parede"
+corpo = '''
+destino="$HOME/.local/share/backgrounds/WhiteSur"
+mkdir -p "$destino"
+find "$D3_FONTES/WhiteSur-wallpapers" -type f \( -iname '*.jpg' -o -iname '*.png' \) \
+     ! -iname 'preview-*' ! -ipath '*4k*' -exec cp -f {} "$destino/" \; 2>/dev/null || true
+echo "$(find "$destino" -type f | wc -l) papeis de parede disponiveis"
+# o fundo da tela de login e escolhido e preparado pela receita 97
+'''

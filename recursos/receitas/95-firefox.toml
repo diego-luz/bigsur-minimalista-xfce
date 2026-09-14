@@ -1,0 +1,35 @@
+[modulo]
+id = "95"
+nome = "firefox"
+titulo = "Tema WhiteSur no Firefox"
+requer = ["10"]
+
+[[passo]]
+tipo = "git"
+url = "https://github.com/vinceliuice/WhiteSur-firefox-theme.git"
+ref = "master"
+destino = "@@fontes@@/WhiteSur-firefox-theme"
+
+[[passo]]
+tipo = "script"
+dizer = "instalando o tema no perfil do Firefox"
+tolera_falha = true
+corpo = '''
+navegador=""
+for b in firefox-esr firefox; do command -v "$b" >/dev/null && navegador="$b" && break; done
+[ -n "$navegador" ] || { echo "Firefox nao encontrado, pulando"; exit 0; }
+
+if ! ls "$HOME/.mozilla/firefox"/*default* >/dev/null 2>&1; then
+  echo "criando o perfil padrao"
+  "$navegador" --headless --createprofile default-release >/dev/null 2>&1 || true
+  sleep 2
+fi
+ls "$HOME/.mozilla/firefox"/*default* >/dev/null 2>&1 || {
+  echo "nenhum perfil; abra o Firefox uma vez e rode esta etapa de novo"; exit 0; }
+
+cd "$D3_FONTES/WhiteSur-firefox-theme"
+yes '' | bash ./install.sh -m 3+4 >/dev/null 2>&1 && echo "tema instalado" || echo "o instalador do tema falhou"
+echo "falta um passo manual, uma vez so:"
+echo "  em about:config, ligue toolkit.legacyUserProfileCustomizations.stylesheets"
+echo "  depois feche e abra o Firefox"
+'''

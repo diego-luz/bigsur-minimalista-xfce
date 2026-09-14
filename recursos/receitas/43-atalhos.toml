@@ -1,0 +1,41 @@
+[modulo]
+id = "43"
+nome = "atalhos"
+titulo = "Atalhos de teclado"
+
+[[passo]]
+tipo = "xfconf"
+dizer = "Super+Espaco abre o lancador, como o Spotlight"
+canal = "xfce4-keyboard-shortcuts"
+chave = "/commands/custom/<Super>space"
+valor = "@@HOME@@/.local/bin/d3bian-lancador"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfce4-keyboard-shortcuts"
+chave = "/commands/custom/<Primary><Alt>t"
+valor = "xfce4-terminal"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfce4-keyboard-shortcuts"
+chave = "/commands/custom/<Super>e"
+valor = "thunar"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfce4-keyboard-shortcuts"
+chave = "/commands/custom/<Super>comma"
+valor = "xfce4-settings-manager"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfce4-keyboard-shortcuts"
+chave = "/xfwm4/custom/<Primary><Alt>Left"
+valor = "left_workspace_key"
+
+[[passo]]
+tipo = "xfconf"
+canal = "xfce4-keyboard-shortcuts"
+chave = "/xfwm4/custom/<Primary><Alt>Right"
+valor = "right_workspace_key"

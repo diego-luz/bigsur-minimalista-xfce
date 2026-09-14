@@ -1,0 +1,10 @@
+[modulo]
+id = "42"
+nome = "terminal"
+titulo = "Cores e transparencia do terminal"
+afetada_por = ["fonte_interface"]
+
+[[passo]]
+tipo = "arquivo"
+destino = "~/.config/xfce4/terminal/terminalrc"
+modelo = "terminalrc"

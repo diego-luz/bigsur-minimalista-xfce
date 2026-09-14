@@ -1,0 +1,647 @@
+<title>Aparência - d3bian-init</title>
+<link rel="stylesheet" href="estilo.css">
+<script src="comum.js"></script>
+
+<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
+
+<a class="voltar" href="/"><span aria-hidden="true">&larr;</span> Voltar ao início</a>
+<h1>Aparência do desktop</h1>
+<p class="caminho">/etc/aparencia</p>
+<p class="sub">Escolha como quer o visual, veja a prévia e aplique. Vale para esta máquina.</p>
+
+<div class="cartao destaque" id="cartaoInstalar" hidden style="margin-bottom:22px">
+  <h2>Primeira instalação</h2>
+  <p style="margin:0 0 12px;color:var(--fraco)">
+    Esta máquina ainda não foi preparada. A instalação baixa os temas, compila o tema
+    das janelas e configura a barra, o dock e a tela de login. Leva de 15 a 25 minutos,
+    e a maior parte é a compilação.
+  </p>
+  <details class="verif" id="verif">
+    <summary id="verifResumo">Verificando…</summary>
+    <div id="verificacoes"></div>
+  </details>
+  <div class="etapas" id="etapas"></div>
+  <div class="acoes">
+    <button class="bt pri" id="btInstalar">Instalar tudo</button>
+    <button class="bt sec" id="btRever">Verificar de novo</button>
+  </div>
+  <p style="color:var(--fraco);font-size:13px;margin:12px 0 0">
+    Se quiser, ajuste as opções abaixo antes de instalar. Dá para mudar tudo depois.
+  </p>
+</div>
+
+<div class="grade">
+  <div class="estica">
+    <div class="cartao previa fixa-lado">
+      <div class="seg abas" role="group" aria-label="Tipo de prévia">
+        <button id="abaEsquema" aria-pressed="true">Esquema</button>
+        <button id="abaFoto" aria-pressed="false">Foto da tela</button>
+      </div>
+
+      <div id="painelEsquema">
+        <div class="esquema" id="esquema" aria-label="Esquema do desktop com as opções escolhidas">
+          <div class="e-barra">
+            <span class="e-logo"><img id="eLogo" alt=""></span>
+            <span class="e-menu" id="eMenu"><b>Arquivos</b><span>Arquivo</span><span>Editar</span><span>Ver</span></span>
+            <span class="e-titulo" id="eTitulo">Imagens</span>
+            <span class="e-dir"><span>21:04</span><span>◍</span></span>
+          </div>
+          <div class="e-encaixe" id="eEncaixe"><span>arraste para a borda: metade da tela</span></div>
+          <div class="e-jan">
+            <div class="e-tit">
+              <span class="e-nome">Imagens</span>
+              <span class="e-bt" style="background:#febc2e"></span>
+              <span class="e-bt" style="background:#28c840"></span>
+              <span class="e-bt" style="background:#ff5f57"></span>
+            </div>
+            <div class="e-corpo">
+              <div class="e-lado">
+                <span class="e-item">Pasta pessoal</span>
+                <span class="e-item sel">Imagens</span>
+                <span class="e-item">Documentos</span>
+                <span class="e-item">Downloads</span>
+              </div>
+              <div class="e-conteudo">
+                <div class="e-linha" style="width:72%"></div><div class="e-linha" style="width:88%"></div>
+                <div class="e-linha" style="width:55%"></div><div class="e-linha" style="width:80%"></div>
+                <span class="e-botao">Abrir</span>
+              </div>
+            </div>
+          </div>
+          <div class="e-widget" id="eWidget">
+            <div class="e-hora">21:04</div>
+            <div class="e-sub">sábado, 12 de setembro</div>
+            <div class="e-med">
+              <div class="e-bar" style="width:70%"></div>
+              <div class="e-bar" style="width:45%"></div>
+              <div class="e-bar" style="width:60%"></div>
+            </div>
+          </div>
+          <div class="e-dock" id="eDock">
+            <span class="e-app" style="background:#4a90e2"></span>
+            <span class="e-app" style="background:#50b83c"></span>
+            <span class="e-app" style="background:#f5a623"></span>
+            <span class="e-app" style="background:#bd10e0"></span>
+            <span class="e-app" style="background:#3a3a3c"></span>
+          </div>
+        </div>
+        <p class="e-nota">
+          Muda na hora a cada opção. Em Foto da tela há uma imagem de verdade, e cada
+          opção ao lado também mostra como fica.
+        </p>
+      </div>
+
+      <div id="painelFoto" hidden>
+        <img id="img" alt="Prévia do desktop" src="/capturas/escuro-com-widget.jpg">
+        <div class="semfoto" id="semfoto" hidden>
+          Ainda não há prévia para esta combinação.<br>
+          Use os botões abaixo para fotografar a sua tela.
+        </div>
+        <div class="legenda">
+          <span id="legenda">Prévia</span><span id="origem"></span>
+        </div>
+        <div class="acoes" style="margin-top:12px">
+          <button class="bt sec" id="btCapturar">Capturar a tela como está</button>
+          <button class="bt sec" id="btCapturarTodas">Recapturar as quatro</button>
+        </div>
+        <p style="color:var(--fraco);font-size:13px;margin:10px 2px 0">
+          A prévia é uma foto da sua tela. Depois de aplicar, deixe a área de trabalho
+          do jeito que quer mostrar e capture de novo. A contagem dá cinco segundos.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="cartao">
+      <h2>Ajustes</h2>
+      <div id="opcoes"></div>
+      <div id="galeria" hidden>
+        <div class="dica" style="margin-top:14px">Galeria de papéis de parede</div>
+        <div class="papeis" id="papeis"></div>
+      </div>
+      <div class="barra-acao">
+        <span class="conta" id="contaMudancas">Nada alterado</span>
+        <button class="bt pri" id="btAplicar">Aplicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cartao" style="margin-top:20px" id="cartaoLogin">
+  <h2>Tela de login e de bloqueio</h2>
+  <div class="grade">
+    <div>
+      <img id="imgLogin" src="/capturas/login.jpg" alt="Prévia da tela de login"
+           style="width:100%;display:block;border-radius:var(--raio);border:1px solid var(--borda)">
+      <div class="semfoto" id="semLogin" hidden>
+        Ainda não há prévia da tela de login.<br>
+        Marque as opções e use Gerar prévia.
+      </div>
+      <p style="color:var(--fraco);font-size:13px;margin:10px 2px 0">
+        A prévia abre a tela de login de verdade numa janela, com as opções marcadas
+        aqui, mesmo antes de aplicar, e fotografa. A tela de bloqueio é a mesma, com o
+        seu usuário já escolhido. Depois de aplicar, o bloqueio muda na hora e o login
+        no próximo reinício.
+      </p>
+      <div class="acoes" style="margin-top:12px">
+        <button class="bt sec" id="btLogin">Gerar prévia</button>
+      </div>
+    </div>
+    <div>
+      <div id="opcoesLogin"></div>
+      <div id="galeriaLogin" hidden>
+        <div class="dica" style="margin-top:14px">Fundo da tela de login</div>
+        <div class="papeis" id="papeisLogin"></div>
+      </div>
+      <div class="acoes">
+        <button class="bt pri" id="btAplicarLogin">Aplicar</button>
+        <button class="bt sec" id="btReiniciarLogin">Reiniciar a tela de login</button>
+      </div>
+      <p style="color:var(--fraco);font-size:12.5px;margin:10px 2px 0">
+        A tela de login nova só aparece quando o LightDM reinicia. O botão faz isso
+        agora, mas fecha a sessão e os programas abertos; salve antes. Ou apenas
+        reinicie o computador quando for melhor.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let estado = {}, salvo = {}, opcoes = [], receitas = [], instalado = true, previa = "escuro-com-widget";
+let retomou = false;
+const BOTOES = ["#btAplicar", "#btAplicarLogin", "#btCapturar", "#btCapturarTodas",
+                "#btLogin", "#btReiniciarLogin", "#btInstalar", "#btRever"];
+const APLICAR = ["#btAplicar", "#btAplicarLogin"];
+// imagens de exemplo por opcao, do pacote: {chave: {valor: arquivo}}
+let EXEMPLOS = null;
+let proprias = [];
+// estas ficam no cartao da tela de login; as galerias tem desenho proprio
+const DO_LOGIN = ["login_usuarios", "login_desfoque", "bloqueio"];
+const COM_GALERIA = ["papel_de_parede", "login_fundo"];
+const ROTULOS = {};
+
+// ---- desenho ------------------------------------------------------------
+
+function desenharOpcoes(){
+  $("#opcoes").textContent = "";
+  $("#opcoesLogin").textContent = "";
+  opcoes.forEach(o => {
+    // os papeis de parede tem galeria propria, com miniatura; a linha de
+    // botoes nao daria conta de treze opcoes
+    if (COM_GALERIA.includes(o.chave)) return;
+    const caixa = DO_LOGIN.includes(o.chave) ? $("#opcoesLogin") : $("#opcoes");
+    const linha = document.createElement("div");
+    linha.className = "opcao";
+    const txt = document.createElement("div");
+    const rot = document.createElement("div");
+    rot.className = "rot"; rot.textContent = o.titulo;
+    const dica = document.createElement("div");
+    dica.className = "dica"; dica.textContent = o.ajuda || "";
+    txt.appendChild(rot); txt.appendChild(dica);
+    // como fica o valor marcado, numa imagem generica que vem no pacote
+    const exemplo = ((EXEMPLOS || {})[o.chave] || {})[estado[o.chave]];
+    if (exemplo){
+      const img = document.createElement("img");
+      img.className = "exemplo";
+      img.alt = `Exemplo: ${o.titulo}, ${rotulo(estado[o.chave], o.chave)}`;
+      img.src = `/exemplos/${exemplo}`;
+      txt.appendChild(img);
+    }
+    linha.appendChild(txt);
+
+    if (o.valores.length <= 3){
+      const grupo = document.createElement("div");
+      grupo.className = "seg";
+      o.valores.forEach(v => {
+        const b = document.createElement("button");
+        b.textContent = rotulo(v, o.chave);
+        b.setAttribute("aria-pressed", String(estado[o.chave] === v));
+        b.addEventListener("click", () => { estado[o.chave] = v; desenhar(); });
+        grupo.appendChild(b);
+      });
+      linha.appendChild(grupo);
+    } else {
+      const sel = document.createElement("select");
+      o.valores.forEach(v => {
+        const op = document.createElement("option");
+        op.value = v; op.textContent = rotulo(v, o.chave);
+        sel.appendChild(op);
+      });
+      sel.value = estado[o.chave];
+      sel.addEventListener("change", e => { estado[o.chave] = e.target.value; desenhar(); });
+      linha.appendChild(sel);
+    }
+    caixa.appendChild(linha);
+  });
+}
+
+const NOMES = {sim: "Com", nao: "Sem", claro: "Claro", escuro: "Escuro",
+               manter: "Manter", "do-tema": "Do tema", padrao: "Padrão",
+               debian: "Debian branco", "debian-cor": "Debian magenta",
+               maca: "Maçã", tux: "Tux", "tux-cor": "Tux colorido",
+               inter: "Inter", "sf-pro": "SF Pro",
+               campos: "Nome e senha", lista: "Lista"};
+// o mesmo valor pode querer dizer coisas diferentes em opcoes diferentes
+const NOMES_POR_CHAVE = {
+  bloqueio: {nao: "Nunca", 5: "5 minutos", 10: "10 minutos", 15: "15 minutos", 30: "30 minutos"},
+  login_desfoque: {sim: "Desfocado", nao: "Nítido"},
+};
+const rotulo = (v, chave) =>
+  (NOMES_POR_CHAVE[chave] || {})[v] || NOMES[v] || v[0].toUpperCase() + v.slice(1);
+
+let papeis = [];
+
+function desenharGaleria(){
+  galeria("#galeria", "#papeis", "papel_de_parede",
+          [["manter", "Manter o meu"], ["do-tema", "Deixar o tema escolher"]]);
+  galeria("#galeriaLogin", "#papeisLogin", "login_fundo",
+          [["desktop", "Igual ao desktop"], ["do-tema", "Deixar o tema escolher"]]);
+}
+
+function galeria(moldura, seletor, chave, especiais){
+  const caixa = $(seletor);
+  if (!papeis.length){ $(moldura).hidden = true; return; }
+  $(moldura).hidden = false;
+  caixa.textContent = "";
+
+  especiais.forEach(([valor, texto]) => {
+    const b = document.createElement("button");
+    b.className = "papel especial";
+    b.textContent = texto;
+    b.setAttribute("aria-pressed", String(estado[chave] === valor));
+    b.addEventListener("click", () => { estado[chave] = valor; desenhar(); });
+    caixa.appendChild(b);
+  });
+
+  papeis.forEach(w => {
+    const b = document.createElement("button");
+    b.className = "papel";
+    b.title = w.nome;
+    b.setAttribute("aria-pressed", String(estado[chave] === w.nome));
+    const img = document.createElement("img");
+    img.loading = "lazy"; img.alt = w.nome; img.src = `/papeis/${w.nome}.jpg`;
+    const nome = document.createElement("span");
+    nome.className = "nome"; nome.textContent = w.nome;
+    b.appendChild(img); b.appendChild(nome);
+    b.addEventListener("click", () => { estado[chave] = w.nome; desenhar(); });
+    caixa.appendChild(b);
+  });
+}
+
+let doTema = {};
+
+// as mesmas cores do WhiteSur, de src/sass/_colors-palette.scss
+const DESTAQUE = {padrao: "#0860f2", azul: "#2e7cf7", roxo: "#9a57a3", rosa: "#e55e9c",
+                  vermelho: "#ed5f5d", laranja: "#e9873a", amarelo: "#f3ba4b",
+                  verde: "#79b757", cinza: "#8c8c8c"};
+
+// o fundo que o desktop teria com as opcoes marcadas
+function fundoDoEsquema(){
+  const v = estado.papel_de_parede;
+  // "manter" desenha o degrade generico: a pagina nao mostra nada da maquina
+  if (v === "manter") return "";
+  if (v === "do-tema") return doTema[estado.tema] ? `/papeis/${doTema[estado.tema]}.jpg` : "";
+  return v ? `/papeis/${v}.jpg` : "";
+}
+
+function desenharEsquema(){
+  const e = $("#esquema");
+  e.classList.toggle("claro", estado.tema === "claro");
+  e.classList.toggle("arred", estado.efeitos === "sim");
+  // a imagem vem por cima de um degrade, que aparece se ela nao carregar
+  const fundo = fundoDoEsquema();
+  e.style.setProperty("--e-img", fundo ? `url("${fundo}")` : "none");
+  e.style.setProperty("--e-acento", DESTAQUE[estado.destaque] || DESTAQUE.padrao);
+  e.style.fontFamily = estado.fonte_interface === "sf-pro"
+    ? '"SF Pro Display", Inter, system-ui, sans-serif' : 'Inter, system-ui, sans-serif';
+  $("#eMenu").hidden    = estado.menu_global !== "sim";
+  $("#eTitulo").hidden  = estado.titulo_no_painel !== "sim";
+  $("#eEncaixe").hidden = estado.janelas !== "sim";
+  $("#eWidget").hidden  = estado.widget !== "sim";
+  $("#eDock").hidden    = estado.dock !== "sim";
+  const cor = estado.tema === "escuro" ? "claro" : "escuro";
+  const logo = estado.logo || "debian";
+  const arq = logo.endsWith("-cor") ? `${logo}.svg` : `${logo}-${cor}.svg`;
+  $("#eLogo").src = `/logos/${arq}`;
+}
+
+// quantas opcoes a pagina tem diferentes do que foi aplicado por ultimo
+function desenharMudancas(){
+  const n = Object.keys(estado).filter(c => estado[c] !== salvo[c]).length;
+  const conta = $("#contaMudancas");
+  conta.textContent = n === 0 ? "Nada alterado"
+    : n === 1 ? "1 opção alterada, ainda não aplicada" : `${n} opções alteradas, ainda não aplicadas`;
+  conta.classList.toggle("mudou", n > 0);
+}
+
+function desenhar(){
+  desenharOpcoes();
+  desenharEsquema();
+  desenharGaleria();
+  desenharMudancas();
+  const tema = estado.tema === "claro" ? "claro" : "escuro";
+  const w = estado.widget === "sim" ? "com" : "sem";
+  previa = `${tema}-${w}-widget`;
+  const img = $("#img");
+  img.onerror = () => { img.hidden = true; $("#semfoto").hidden = false; };
+  img.onload  = () => { img.hidden = false; $("#semfoto").hidden = true; };
+  img.src = `/capturas/${previa}.jpg?t=${Date.now()}`;
+  $("#legenda").textContent = `Tema ${tema}, ${w} widget`;
+  $("#origem").textContent = proprias.includes(previa) ? "Foto desta máquina" : "Imagem de exemplo";
+}
+
+function aba(qual){
+  const foto = qual === "foto";
+  $("#painelEsquema").hidden = foto;
+  $("#painelFoto").hidden = !foto;
+  $("#abaEsquema").setAttribute("aria-pressed", String(!foto));
+  $("#abaFoto").setAttribute("aria-pressed", String(foto));
+}
+$("#abaEsquema").addEventListener("click", () => aba("esquema"));
+$("#abaFoto").addEventListener("click", () => aba("foto"));
+
+function ajustarLogin(){
+  const img = $("#imgLogin");
+  img.onerror = () => { img.hidden = true; $("#semLogin").hidden = false; };
+  img.onload  = () => { img.hidden = false; $("#semLogin").hidden = true; };
+  img.src = "/capturas/login.jpg?t=" + Date.now();
+}
+ajustarLogin();
+
+function desenharEtapas(){
+  const caixa = $("#etapas");
+  caixa.textContent = "";
+  receitas.forEach(r => {
+    const el = document.createElement("span");
+    el.className = "etapa" + (r.aplicada ? " feito" : "");
+    el.textContent = (r.aplicada ? "✓ " : "") + (r.titulo || r.nome);
+    el.title = "etapa " + r.id;
+    caixa.appendChild(el);
+  });
+}
+
+async function desenharVerificacoes(){
+  const caixa = $("#verificacoes"), resumo = $("#verifResumo");
+  resumo.textContent = "Verificando…";
+  let dados;
+  try { dados = await fetch("/api/verificacoes").then(r => r.json()); }
+  catch (e) { resumo.textContent = "Não consegui verificar."; return true; }
+  caixa.textContent = "";
+  const lista = dados.verificacoes || [];
+  lista.forEach(c => {
+    const linha = document.createElement("div");
+    linha.className = "check " + (c.ok ? "sim" : (c.critico ? "nao" : "alerta"));
+    const mk = document.createElement("span");
+    mk.className = "mk"; mk.textContent = c.ok ? "✓" : "!";
+    const txt = document.createElement("div");
+    const n = document.createElement("div"); n.textContent = c.nome;
+    const d = document.createElement("div"); d.className = "det"; d.textContent = c.detalhe;
+    txt.appendChild(n); txt.appendChild(d);
+    linha.appendChild(mk); linha.appendChild(txt);
+    caixa.appendChild(linha);
+  });
+  // tudo certo cabe numa linha; so abre a lista quando algo impede
+  const impedem = dados.impedimentos || [];
+  const oks = lista.filter(c => c.ok).length;
+  resumo.textContent = "";
+  const marca = document.createElement("span");
+  marca.className = impedem.length ? "nao" : "ok";
+  marca.textContent = impedem.length ? "! " : "✓ ";
+  resumo.appendChild(marca);
+  resumo.appendChild(document.createTextNode(impedem.length
+    ? `${impedem.length} ${impedem.length === 1 ? "verificação impede" : "verificações impedem"} a instalação`
+    : `${oks} de ${lista.length} verificações passaram`));
+  $("#verif").open = impedem.length > 0;
+  $("#btInstalar").disabled = impedem.length > 0 || Terminal.ocupado();
+  return impedem.length === 0;
+}
+
+// etapas que o terminal lista, a partir das receitas que a pagina conhece
+const etapasDe = ids => ids.map(id => {
+  const r = receitas.find(x => x.id === id);
+  return {id, nome: r ? (r.titulo || r.nome) : "Etapa " + id};
+});
+function etapasDoRotulo(rotulo){
+  if (/^Instalacao/.test(rotulo || "")) return etapasDe(receitas.map(r => r.id));
+  const m = (rotulo || "").match(/^(?:Re)?[Aa]plicando: (.*)$/);
+  return m ? etapasDe(m[1].split(", ")) : [];
+}
+// o rotulo do servidor e para o registro; na tela vai um nome curto
+function tituloDoRotulo(rotulo){
+  const r = rotulo || "";
+  if (/^Instalacao/.test(r)) return "Instalação completa";
+  if (/^Reaplicando/.test(r)) return "Reaplicando a aparência";
+  if (/^Aplicando/.test(r)) return "Aplicando a aparência";
+  if (/^Capturando/.test(r)) return "Capturando a tela";
+  if (/login/i.test(r)) return "Prévia da tela de login";
+  return r || "Tarefa em andamento";
+}
+
+// o que dizer ao terminar, igual para o clique e para a tarefa retomada
+function fimInstalar(codigo){
+  if (codigo === 0) return {bom: true, titulo: "Instalação concluída",
+    texto: "O desktop está pronto. Daqui em diante é só ajustar e aplicar.",
+    itens: [
+      "Encerre a sessão e entre de novo para a barra do topo funcionar por completo.",
+      "Reinicie para ver a nova tela de login.",
+      "Use Capturar a tela como está, em Foto da tela, para as prévias mostrarem a sua máquina."
+    ]};
+  if (codigo !== null) return {bom: false, titulo: "A instalação parou com erro",
+    texto: `Código ${codigo}. A etapa em vermelho mostra onde parou; dá para corrigir e instalar de novo, `
+         + "e o que já foi feito é pulado."};
+  return null;
+}
+function fimAplicar(reaplicou, codigo){
+  if (codigo === 0) return {bom: true, titulo: "Aparência aplicada",
+    texto: reaplicou
+      ? "Reapliquei as mesmas opções. Pode mudar algo e aplicar quantas vezes quiser."
+      : "Pronto. Pode mudar outra coisa e aplicar de novo, sem fechar a página.",
+    itens: [
+      "A barra do topo só lista os menus dos programas depois de encerrar e reabrir a sessão.",
+      "O bloqueio vale na hora, e Ctrl+Alt+L bloqueia.",
+      "A tela de login muda ao reiniciar; use Reiniciar a tela de login quando tiver salvo o que está aberto."
+    ]};
+  if (codigo !== null) return {bom: false, titulo: "A aplicação parou com erro",
+    texto: `Código ${codigo}. A etapa em vermelho e as linhas vermelhas do log mostram onde parou.`};
+  return null;
+}
+
+async function carregar(){
+  if (EXEMPLOS === null){
+    try { EXEMPLOS = await fetch("/exemplos/indice.json").then(r => r.ok ? r.json() : {}); }
+    catch (e) { EXEMPLOS = {}; }
+  }
+  let d;
+  try { d = await fetch("/api/estado").then(r => r.json()); }
+  catch (e) { desenhar(); return; }
+  estado = d.config || {};
+  salvo = {...estado};
+  opcoes = d.opcoes || [];
+  proprias = d.proprias || [];
+  receitas = d.receitas || [];
+  instalado = d.instalado !== false;
+  desenhar();
+  desenharEtapas();
+  try {
+    const p = await fetch("/api/papeis").then(r => r.json());
+    papeis = p.papeis || []; doTema = p.doTema || {};
+  } catch (e) { papeis = []; }
+  desenharGaleria();
+  desenharEsquema();
+
+  $("#cartaoInstalar").hidden = instalado;
+  APLICAR.forEach(sel => {
+    ROTULOS[sel] = instalado ? "Aplicar" : "Aplicar (instale primeiro)";
+  });
+  travar(Terminal.ocupado());
+  if (!instalado) await desenharVerificacoes();
+
+  // uma tarefa que ja rodava antes de a pagina abrir (ou de recarregar) volta a aparecer
+  if (!retomou){
+    retomou = true;
+    let rotuloRetomado = "";
+    Terminal.retomar({
+      titulo: rotulo => { rotuloRetomado = rotulo || ""; return tituloDoRotulo(rotulo); },
+      etapas: etapasDoRotulo,
+      aoTerminar: async codigo => {
+        await carregar();
+        if (/^Instalacao/.test(rotuloRetomado)) return fimInstalar(codigo);
+        if (/aplicando/i.test(rotuloRetomado)) return fimAplicar(/^Re/.test(rotuloRetomado), codigo);
+        return null;
+      },
+    });
+  }
+}
+carregar();
+
+// ---- execucao -----------------------------------------------------------
+
+function travar(ocupado, qual, rotuloOcupado){
+  BOTOES.forEach(sel => {
+    const b = $(sel); if (!b) return;
+    if (ROTULOS[sel] === undefined) ROTULOS[sel] = b.textContent;
+    b.disabled = ocupado || (APLICAR.includes(sel) && !instalado);
+    b.textContent = (ocupado && sel === qual) ? rotuloOcupado : ROTULOS[sel];
+  });
+}
+// os botoes acompanham a tarefa: voltam quando ela termina e travam quando a
+// pagina retoma uma que ja rodava. Num clique eles ja estao travados, com o
+// rotulo "Aplicando…", que nao deve ser trocado
+Terminal.aoMudar(ocupado => {
+  if (!ocupado || !BOTOES.some(sel => $(sel) && $(sel).disabled)) travar(ocupado);
+});
+
+async function pedir(rota, corpo){
+  try {
+    return await fetch(rota, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(corpo || {})
+    }).then(x => x.json());
+  } catch (e) { return {iniciado: false, erro: "O servidor local não respondeu."}; }
+}
+
+function naoComecou(texto){
+  travar(false);
+  Terminal.avisar(false, "Não deu para começar", texto);
+}
+
+APLICAR.forEach(sel => $(sel).addEventListener("click", () => aplicar(sel)));
+
+async function aplicar(qual){
+  travar(true, qual, "Aplicando…");
+  const r = await pedir("/api/aplicar", estado);
+  if (!r.iniciado){
+    naoComecou(r.erro || (r.motivo === "ocupado"
+      ? "Já tem uma tarefa rodando. Espere terminar."
+      : "Não havia nada a fazer com essas opções."));
+    return;
+  }
+  Terminal.acompanhar({
+    titulo: r.reaplicou ? "Reaplicando a aparência" : "Aplicando a aparência",
+    etapas: etapasDe(r.receitas || []),
+    aoTerminar: async codigo => { await carregar(); return fimAplicar(r.reaplicou, codigo); },
+  });
+}
+
+$("#btInstalar").addEventListener("click", async () => {
+  if (!await desenharVerificacoes()) return;
+  travar(true, "#btInstalar", "Instalando…");
+  const r = await pedir("/api/instalar", estado);
+  if (!r.iniciado){
+    naoComecou((r.impedimentos || []).length
+      ? "As verificações impedem: " + r.impedimentos.join(", ") + "."
+      : (r.erro || "Não consegui iniciar a instalação."));
+    return;
+  }
+  Terminal.acompanhar({
+    titulo: "Instalação completa",
+    etapas: etapasDe(receitas.map(x => x.id)),
+    dica: "Leva de 15 a 25 minutos; a compilação do tema é a parte lenta. Deixe esta página aberta.",
+    aoTerminar: async codigo => { await carregar(); return fimInstalar(codigo); },
+  });
+});
+
+$("#btRever").addEventListener("click", async e => {
+  e.target.disabled = true; await desenharVerificacoes(); e.target.disabled = false;
+});
+
+async function capturar(qual, modo, ocupado){
+  travar(true, qual, ocupado);
+  const r = await pedir("/api/capturar", {modo, espera: 5});
+  if (!r.iniciado){ naoComecou(r.erro || "Já tem uma tarefa rodando. Espere terminar."); return; }
+  Terminal.acompanhar({
+    titulo: modo === "todas" ? "Recapturando as prévias" : "Capturando a tela",
+    dica: "A contagem dá cinco segundos; deixe a área de trabalho à vista.",
+    aoTerminar: codigo => {
+      if (codigo === 0){
+        desenhar(); aba("foto");
+        return {bom: true, titulo: "Prévia atualizada", texto: "A foto agora mostra a sua tela."};
+      }
+      return codigo === null ? null
+        : {bom: false, titulo: "Não consegui capturar", texto: "O log mostra o motivo."};
+    },
+  });
+}
+$("#btCapturar").addEventListener("click", () =>
+  capturar("#btCapturar", "atual", "Capturando…"));
+$("#btCapturarTodas").addEventListener("click", () =>
+  capturar("#btCapturarTodas", "todas", "Percorrendo…"));
+
+$("#btLogin").addEventListener("click", async () => {
+  travar(true, "#btLogin", "Montando…");
+  const r = await pedir("/api/previa-login", estado);
+  if (!r.iniciado){ naoComecou(r.erro || "Já tem uma tarefa rodando. Espere terminar."); return; }
+  Terminal.acompanhar({
+    titulo: "Prévia da tela de login",
+    aoTerminar: codigo => {
+      ajustarLogin();
+      if (codigo === 0){
+        $("#cartaoLogin").scrollIntoView({behavior: "smooth", block: "start"});
+        return {bom: true, titulo: "Prévia pronta", texto: "A imagem mostra a tela de login com as opções marcadas."};
+      }
+      return codigo === null ? null
+        : {bom: false, titulo: "Não consegui montar a prévia", texto: "O log mostra o motivo."};
+    },
+  });
+});
+
+$("#btReiniciarLogin").addEventListener("click", async () => {
+  if (!confirm("Isto encerra a sua sessão agora: fecha os programas abertos, "
+             + "inclusive este navegador, e mostra a tela de login nova.\n\n"
+             + "Salve o que estiver aberto antes. Continuar?")) return;
+  travar(true, "#btReiniciarLogin", "Reiniciando…");
+  const r = await pedir("/api/reiniciar-login", {confirmar: true});
+  const motivos = {
+    login_nao_aplicado: "A tela de login nova ainda não foi aplicada. Clique em Aplicar primeiro.",
+    sem_permissao: "Sem permissão de administrador. Abra o painel pelo comando d3bian-init.",
+    ocupado: "Já tem uma tarefa rodando. Espere terminar.",
+  };
+  if (!r.iniciado){
+    naoComecou(motivos[r.motivo] || r.erro || "Não consegui reiniciar.");
+  } else {
+    Terminal.avisar(true, "Reiniciando a tela de login", "A sessão fecha em instantes.");
+  }
+});
+</script>

@@ -1,0 +1,34 @@
+[modulo]
+id = "10"
+nome = "pacotes"
+titulo = "Pacotes do repositorio Debian"
+afetada_por = []
+
+[[passo]]
+tipo = "comando"
+dizer = "atualizando o indice do apt"
+root = true
+tolera_falha = true
+argumentos = ["apt-get", "update"]
+
+[[passo]]
+tipo = "apt"
+dizer = "ferramentas para montar os temas"
+pacotes = ["git", "curl", "wget", "jq", "unzip", "sassc", "libglib2.0-dev-bin",
+           "libxml2-utils", "imagemagick", "optipng", "dialog", "x11-utils"]
+
+[[passo]]
+tipo = "apt"
+dizer = "motores graficos que o tema precisa"
+pacotes = ["gtk2-engines-murrine", "gnome-themes-extra", "libglib2.0-bin"]
+
+[[passo]]
+tipo = "apt"
+dizer = "componentes do desktop"
+pacotes = ["rofi", "picom", "conky-all", "xfce4-panel-profiles",
+           "xfce4-whiskermenu-plugin", "xfce4-screenshooter"]
+
+[[passo]]
+tipo = "apt"
+dizer = "tela de login e fontes"
+pacotes = ["lightdm-gtk-greeter", "light-locker", "fonts-inter", "fonts-firacode", "fonts-noto-color-emoji"]

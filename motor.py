@@ -69,6 +69,15 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
 
     minutos = cfg.get("bloqueio", "10")
 
+    # Em maquina virtual o video costuma ser simulado no processador, e o picom
+    # com glx e vsync deixa de redesenhar as janelas: o terminal recebe o que se
+    # digita, mas o texto so aparece quando o foco muda. O xrender e mais
+    # simples e funciona nesses casos.
+    try:
+        virtual = " hypervisor" in Path("/proc/cpuinfo").read_text()
+    except OSError:
+        virtual = False
+
     ctx: dict[str, str] = dict(cfg)
     ctx.update({
         "HOME": str(Path.home()),
@@ -105,6 +114,8 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
         "login_avatar_arquivo": str(avatar),
         "login_esconder_usuarios": "false" if cfg.get("login_usuarios") == "lista" else "true",
         "bloqueio_segundos": str(int(minutos) * 60) if minutos.isdigit() else "0",
+        "picom_backend": "xrender" if virtual else "glx",
+        "picom_vsync": "false" if virtual else "true",
         "fontes": str(caminhos.FONTES),
         "arquivos": str(caminhos.ARQUIVOS),
     })

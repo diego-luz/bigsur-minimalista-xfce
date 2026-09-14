@@ -30,6 +30,8 @@ tipo = "apt"
 se = "efeitos == sim"
 pacotes = ["picom"]
 
+# o modelo escolhe glx na maquina fisica e xrender sem vsync em maquina
+# virtual, onde o glx para de redesenhar as janelas
 [[passo]]
 tipo = "arquivo"
 se = "efeitos == sim"

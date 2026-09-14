@@ -202,13 +202,17 @@ code{background:var(--painel2);border:1px solid var(--borda);padding:1px 5px;
 .porta .seta::before{content:"[ "}
 .porta .seta::after{content:" ]"}
 
-.faixa{display:flex;gap:11px;align-items:center;background:var(--painel);
+/* sem flex-wrap: com ele, a frase longa descia inteira para a linha de baixo
+   e a bolinha ficava sozinha em cima. O texto ocupa o resto e quebra por dentro,
+   e a bolinha acompanha a primeira linha */
+.faixa{display:flex;gap:11px;align-items:flex-start;background:var(--painel);
        border:1px solid var(--borda);border-left:3px solid var(--acento);
        border-radius:var(--raio);padding:12px 15px;margin-top:20px;
-       font-size:12.5px;flex-wrap:wrap;letter-spacing:.02em}
+       font-size:12.5px;line-height:1.6;letter-spacing:.02em}
 .faixa.atencao{border-left-color:var(--alerta);background:rgba(255,204,0,.05)}
 .faixa .pt{width:7px;height:7px;border-radius:50%;background:var(--acento);flex-shrink:0;
-           box-shadow:0 0 8px var(--acento)}
+           margin-top:.52em;box-shadow:0 0 8px var(--acento)}
+.faixa .pt + span{flex:1;min-width:0}
 .faixa.atencao .pt{background:var(--alerta);box-shadow:0 0 8px var(--alerta)}
 .faixa a{color:var(--acento)}
 

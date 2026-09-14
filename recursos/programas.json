@@ -327,6 +327,174 @@
       ]
     },
     {
+      "nome": "Hardware desta maquina",
+      "itens": [
+        {
+          "pkg": "blueman",
+          "nome": "Bluetooth",
+          "desc": "Parear e gerenciar dispositivos Bluetooth; o XFCE nao tem tela propria",
+          "hardware": "bluetooth",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "pulseaudio-module-bluetooth",
+          "nome": "Audio Bluetooth",
+          "desc": "Fone e caixa de som Bluetooth no PulseAudio",
+          "hardware": [
+            "bluetooth",
+            "som-pulseaudio"
+          ],
+          "papel": "necessario"
+        },
+        {
+          "pkg": "libspa-0.2-bluetooth",
+          "nome": "Audio Bluetooth",
+          "desc": "Fone e caixa de som Bluetooth no PipeWire",
+          "hardware": [
+            "bluetooth",
+            "som-pipewire"
+          ],
+          "papel": "necessario"
+        },
+        {
+          "pkg": "intel-microcode",
+          "nome": "Microcode Intel",
+          "desc": "Correcoes de seguranca e estabilidade do processador, carregadas no boot",
+          "hardware": "cpu-intel",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "amd64-microcode",
+          "nome": "Microcode AMD",
+          "desc": "Correcoes de seguranca e estabilidade do processador, carregadas no boot",
+          "hardware": "cpu-amd",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "intel-media-va-driver",
+          "nome": "Video Intel acelerado",
+          "desc": "Decodifica video pela placa, poupa processador e bateria",
+          "hardware": "video-intel",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "fprintd",
+          "nome": "Leitor de digital",
+          "desc": "Servico que reconhece o leitor de impressao digital",
+          "hardware": "leitor-digital",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-realtek",
+          "nome": "Firmware Realtek",
+          "desc": "Wi-Fi, Bluetooth e placa de rede Realtek",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-iwlwifi",
+          "nome": "Firmware Intel Wi-Fi",
+          "desc": "Wi-Fi e Bluetooth Intel",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-atheros",
+          "nome": "Firmware Atheros",
+          "desc": "Wi-Fi e Bluetooth Qualcomm Atheros",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-brcm80211",
+          "nome": "Firmware Broadcom",
+          "desc": "Wi-Fi Broadcom",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-mediatek",
+          "nome": "Firmware MediaTek",
+          "desc": "Wi-Fi e Bluetooth MediaTek",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-amd-graphics",
+          "nome": "Firmware de video AMD",
+          "desc": "Placas de video AMD e Radeon",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-intel-graphics",
+          "nome": "Firmware de video Intel",
+          "desc": "Economia de energia e decodificacao no video Intel",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-nvidia-graphics",
+          "nome": "Firmware NVIDIA",
+          "desc": "Placa NVIDIA com o driver livre nouveau",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-sof-signed",
+          "nome": "Firmware de som Intel",
+          "desc": "Audio Intel SOF, comum em notebooks recentes",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "firmware-libertas",
+          "nome": "Firmware Marvell",
+          "desc": "Wi-Fi Marvell",
+          "hardware": "firmware",
+          "papel": "necessario"
+        },
+        {
+          "pkg": "thermald",
+          "nome": "Controle termico Intel",
+          "desc": "Segura a temperatura do processador antes que ele perca desempenho",
+          "hardware": "termico-intel",
+          "papel": "extra"
+        },
+        {
+          "pkg": "tlp",
+          "nome": "TLP",
+          "desc": "Economia de bateria automatica, sem precisar configurar",
+          "hardware": [
+            "bateria",
+            "sem-power-profiles"
+          ],
+          "papel": "extra"
+        },
+        {
+          "pkg": "guvcview",
+          "nome": "Guvcview",
+          "desc": "Abre a camera, tira foto e grava video",
+          "hardware": "webcam",
+          "papel": "extra"
+        },
+        {
+          "pkg": "libpam-fprintd",
+          "nome": "Entrar com a digital",
+          "desc": "Usa o leitor de digital no login e no sudo",
+          "hardware": "leitor-digital",
+          "papel": "extra"
+        },
+        {
+          "pkg": "fwupd",
+          "nome": "fwupd",
+          "desc": "Atualiza firmware de BIOS, SSD e perifericos quando o fabricante publica",
+          "hardware": "uefi",
+          "papel": "extra"
+        }
+      ]
+    },
+    {
       "nome": "Fora do repositório oficial",
       "aviso": "Estes não vêm do Debian. Instalar acrescenta um repositório de terceiro ao seu sistema, que passa a poder enviar atualizações para esta máquina.",
       "itens": [
@@ -336,6 +504,24 @@
           "desc": "Editor da Microsoft, com extensões e depurador",
           "fonte": "microsoft-vscode",
           "aviso": "Acrescenta o repositório da Microsoft ao apt e instala a chave de assinatura dele em /usr/share/keyrings/microsoft-vscode.gpg. A chave fica amarrada só a esse repositório, e não valida mais nada no sistema. A partir daí a Microsoft pode enviar atualizações do pacote code para esta máquina."
+        },
+        {
+          "pkg": "docker-ce",
+          "nome": "Docker (rootless)",
+          "desc": "Containers sem root, com Compose e Buildx, prontos para o seu usuario",
+          "fonte": "docker",
+          "junto": [
+            "docker-ce-cli",
+            "containerd.io",
+            "docker-buildx-plugin",
+            "docker-compose-plugin",
+            "docker-ce-rootless-extras",
+            "uidmap",
+            "dbus-user-session",
+            "slirp4netns"
+          ],
+          "depois": "docker-rootless.sh",
+          "aviso": "Acrescenta o repositório oficial da Docker ao apt e instala a chave dele em /usr/share/keyrings/docker.gpg, amarrada só a esse repositório. A partir daí a Docker pode enviar atualizações para esta máquina. Depois configura o modo rootless para o seu usuário: o daemon roda com o seu usuário e o daemon de root fica desligado. Seu usuário não entra no grupo docker, que daria a ele o mesmo poder de root. Se o docker.io do Debian estiver instalado, o apt o substitui."
         }
       ]
     }

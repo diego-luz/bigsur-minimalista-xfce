@@ -8,6 +8,30 @@
 <h1>Programas úteis</h1>
 <p class="sub" id="aviso">Carregando…</p>
 
+<!-- o hardware encontrado e o que o catalogo tem para ele. Os itens com
+     "hardware" no programas.json so aparecem aqui, e so se a maquina tiver -->
+<div class="cartao hw" id="hardware" hidden>
+  <h2>Hardware desta máquina</h2>
+  <div class="hw-disp" id="hwDisp"></div>
+  <div class="aviso erro" id="hwFonte" hidden>
+    <b>Firmware fora do alcance do apt</b>
+    Falta o componente non-free-firmware nas fontes do Debian. Acrescente
+    non-free-firmware ao fim das linhas do Debian em /etc/apt/sources.list,
+    rode sudo apt update e abra esta página de novo.
+  </div>
+  <h3>Para o hardware funcionar</h3>
+  <p class="hw-ok" id="hwOk" hidden>Nada faltando para o hardware encontrado.</p>
+  <div class="itens" id="hwFalta"></div>
+  <div id="hwSugestoes" hidden>
+    <h3>Sugestões</h3>
+    <p class="hw-nota">Não são necessárias para o hardware funcionar. Marque se quiser.</p>
+    <div class="itens" id="hwExtra"></div>
+  </div>
+  <div class="acoes">
+    <button class="bt pri" id="btFalta" hidden>Instalar o que falta</button>
+  </div>
+</div>
+
 <input id="busca" class="busca" type="search" autocomplete="off"
        placeholder="Buscar por nome, pacote ou descrição…" aria-label="Buscar programas">
 <p class="contagem" id="contagem"></p>
@@ -39,7 +63,7 @@ let catalogo = null, retomou = false;
 let destacar = new Set();
 
 function selecionados(){
-  return [...document.querySelectorAll("#lista input:checked")].map(i => i.value);
+  return [...document.querySelectorAll("#hardware input:checked, #lista input:checked")].map(i => i.value);
 }
 
 function atualizarBarra(){
@@ -59,11 +83,44 @@ function nomeDe(pkg){
   return pkg;
 }
 
+// um item marcavel, igual na lista comum e no cartao do hardware
+function criarItem(it){
+  const rot = document.createElement("label");
+  rot.className = "item" + (it.instalado ? " ja" : "") + (it.fonte ? " externo" : "")
+                + (destacar.has(it.pkg) ? " mudou" : "");
+  // texto sem acento, para a busca achar "grafico" digitando "gráfico" e vice-versa
+  rot.dataset.busca = semAcento(`${it.nome} ${it.pkg} ${it.desc || ""}`);
+  const cx = document.createElement("input");
+  cx.type = "checkbox"; cx.value = it.pkg; cx.dataset.instalado = it.instalado ? "1" : "0";
+  cx.addEventListener("change", atualizarBarra);
+  const txt = document.createElement("div");
+  const nome = document.createElement("div");
+  nome.className = "n"; nome.textContent = it.nome || it.pkg;
+  const selo = (texto, classe) => {
+    const s = document.createElement("span");
+    s.className = "selo" + (classe ? " " + classe : ""); s.textContent = texto;
+    nome.appendChild(s);
+  };
+  if (it.instalado) selo("instalado");
+  else if (it.fonte) selo("fonte de terceiro", "alerta");
+  else if (!it.disponivel){
+    // so chega aqui pelo cartao do hardware: o pacote existe, mas o apt nao alcanca
+    selo("fora do apt", "alerta");
+    cx.disabled = true;
+  }
+  const desc = document.createElement("div");
+  desc.className = "d"; desc.textContent = [it.desc, it.motivo].filter(Boolean).join(" · ");
+  txt.appendChild(nome); txt.appendChild(desc);
+  rot.appendChild(cx); rot.appendChild(txt);
+  return rot;
+}
+
 function render(dados){
   catalogo = dados;
   $("#aviso").textContent = dados.aviso || "";
   const lista = $("#lista");
   lista.textContent = "";
+  const doHardware = [];
   (dados.categorias || []).forEach(cat => {
     const grupo = document.createElement("div");
     grupo.className = "grupo";
@@ -78,39 +135,66 @@ function render(dados){
     const caixa = document.createElement("div");
     caixa.className = "itens";
     (cat.itens || []).forEach(it => {
+      // item de hardware vai para o cartao do topo, e so se a maquina tiver o hardware
+      if (it.hardware){ if (it.detectado) doHardware.push(it); return; }
       // um item de fonte externa so fica disponivel depois que o repositorio
       // e acrescentado, entao ele aparece mesmo antes disso
       if (!it.disponivel && !it.fonte) return;
-      const rot = document.createElement("label");
-      rot.className = "item" + (it.instalado ? " ja" : "") + (it.fonte ? " externo" : "")
-                    + (destacar.has(it.pkg) ? " mudou" : "");
-      // texto sem acento, para a busca achar "grafico" digitando "gráfico" e vice-versa
-      rot.dataset.busca = semAcento(`${it.nome} ${it.pkg} ${it.desc || ""}`);
-      const cx = document.createElement("input");
-      cx.type = "checkbox"; cx.value = it.pkg; cx.dataset.instalado = it.instalado ? "1" : "0";
-      cx.addEventListener("change", atualizarBarra);
-      const txt = document.createElement("div");
-      const nome = document.createElement("div");
-      nome.className = "n"; nome.textContent = it.nome || it.pkg;
-      if (it.instalado){
-        const selo = document.createElement("span");
-        selo.className = "selo"; selo.textContent = "instalado";
-        nome.appendChild(selo);
-      } else if (it.fonte){
-        const selo = document.createElement("span");
-        selo.className = "selo alerta"; selo.textContent = "fonte de terceiro";
-        nome.appendChild(selo);
-      }
-      const desc = document.createElement("div");
-      desc.className = "d"; desc.textContent = it.desc || "";
-      txt.appendChild(nome); txt.appendChild(desc);
-      rot.appendChild(cx); rot.appendChild(txt);
-      caixa.appendChild(rot);
+      caixa.appendChild(criarItem(it));
     });
     if (caixa.children.length){ grupo.appendChild(caixa); lista.appendChild(grupo); }
   });
+  desenharHardware(dados.hardware, doHardware);
   atualizarBarra();
   filtrar();
+}
+
+// Cartao do hardware: o que foi encontrado, o que falta para ele funcionar
+// (ja marcado) e as sugestoes, desmarcadas para a pessoa decidir
+function desenharHardware(maquina, itens){
+  const cartao = $("#hardware");
+  cartao.hidden = !maquina;
+  if (!maquina) return;
+
+  const disp = $("#hwDisp");
+  disp.textContent = "";
+  (maquina.dispositivos || []).forEach(d => {
+    const s = document.createElement("span");
+    const b = document.createElement("b");
+    b.textContent = d.nome;
+    s.appendChild(b);
+    if (d.detalhe) s.appendChild(document.createTextNode(" " + d.detalhe));
+    disp.appendChild(s);
+  });
+  if (!disp.children.length) disp.textContent = "Nenhum dispositivo reconhecido.";
+
+  const necessarios = itens.filter(it => it.papel !== "extra");
+  const extras = itens.filter(it => it.papel === "extra");
+  const pendentes = necessarios.filter(it => !it.instalado);
+  const instalaveis = pendentes.filter(it => it.disponivel);
+
+  const falta = $("#hwFalta");
+  falta.textContent = "";
+  necessarios.forEach(it => {
+    const rot = criarItem(it);
+    if (!it.instalado && it.disponivel) rot.querySelector("input").checked = true;
+    falta.appendChild(rot);
+  });
+  falta.hidden = !necessarios.length;
+  $("#hwOk").hidden = pendentes.length > 0;
+
+  const extra = $("#hwExtra");
+  extra.textContent = "";
+  extras.forEach(it => extra.appendChild(criarItem(it)));
+  $("#hwSugestoes").hidden = !extras.length;
+
+  // pendente que o apt nao alcanca: quase sempre falta o non-free-firmware
+  $("#hwFonte").hidden = maquina.non_free_firmware || !pendentes.some(it => !it.disponivel);
+
+  const bt = $("#btFalta");
+  bt.hidden = !instalaveis.length;
+  bt.textContent = `Instalar o que falta (${instalaveis.length})`;
+  bt.onclick = () => agir("/api/programas/instalar", {pacotes: instalaveis.map(it => it.pkg)}, false);
 }
 
 const semAcento = t => (t || "").toLowerCase()
@@ -180,12 +264,12 @@ $("#btTodos").addEventListener("click", () => {
   atualizarBarra();
 });
 $("#btNenhum").addEventListener("click", () => {
-  document.querySelectorAll("#lista input").forEach(i => { i.checked = false; });
+  document.querySelectorAll("#hardware input, #lista input").forEach(i => { i.checked = false; });
   atualizarBarra();
 });
 
 function travar(ocupado){
-  ["#btInstalar", "#btRemover", "#btTodos", "#btNenhum"].forEach(s => {
+  ["#btInstalar", "#btRemover", "#btTodos", "#btNenhum", "#btFalta"].forEach(s => {
     const b = $(s); if (b) b.disabled = ocupado;
   });
   if (!ocupado) atualizarBarra();

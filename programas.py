@@ -10,9 +10,10 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from pathlib import Path
 from typing import Callable
 
-from . import caminhos, sistema
+from . import caminhos, hardware, sistema
 
 LIMITE = 60          # pacotes por operacao
 
@@ -60,9 +61,18 @@ def com_estado() -> dict:
     dados = catalogo()
     nomes = sorted(permitidos())
     estados = sistema.estado_pacotes(nomes)
+    # item com "hardware" so interessa se a maquina tem aquele hardware; a
+    # pagina o mostra no cartao do hardware, nao na lista comum
+    maquina = hardware.detectar()
     for categoria in dados.get("categorias", []):
         for item in categoria.get("itens", []):
             item.update(estados.get(item.get("pkg", ""), {}))
+            if item.get("hardware"):
+                item["detectado"] = hardware.atende(item, maquina)
+                usos = maquina["firmware"].get(item.get("pkg", ""))
+                if usos:
+                    item["motivo"] = "usado por " + ", ".join(usos)
+    dados["hardware"] = maquina
     return dados
 
 
@@ -113,7 +123,11 @@ def comando_instalar(pacotes: list[str]) -> list[str]:
 
 
 def instalar(pacotes: list[str], diz: Callable[[str], None]) -> int:
-    """Habilita as fontes de terceiro que forem necessarias e instala."""
+    """Habilita as fontes de terceiro, instala e roda o roteiro de cada item.
+
+    Um item pode levar pacotes junto ("junto") e pedir um roteiro de
+    configuracao depois do apt ("depois"), como o Docker rootless.
+    """
     for pedido in fontes_necessarias(pacotes):
         diz(f"habilitando a fonte de {pedido['nome']}: {pedido['fonte']}")
         roteiro = caminhos.ARQUIVOS / "fonte-externa.sh"
@@ -122,9 +136,28 @@ def instalar(pacotes: list[str], diz: Callable[[str], None]) -> int:
             diz("nao consegui habilitar a fonte; nada foi instalado")
             return codigo
 
-    diz("instalando: " + ", ".join(pacotes))
-    return _correr(["sudo", "-n", "env", "DEBIAN_FRONTEND=noninteractive",
-                    *comando_instalar(pacotes)], diz)
+    tabela = itens()
+    todos = list(pacotes)
+    for nome in pacotes:
+        todos += [p for p in tabela.get(nome, {}).get("junto", []) if p not in todos]
+    diz("instalando: " + ", ".join(todos))
+    codigo = _correr(["sudo", "-n", "env", "DEBIAN_FRONTEND=noninteractive",
+                      *comando_instalar(todos)], diz)
+    if codigo != 0:
+        return codigo
+
+    for nome in pacotes:
+        roteiro = tabela.get(nome, {}).get("depois", "")
+        # so nome de arquivo de recursos/arquivos, nunca um caminho
+        if not roteiro or Path(roteiro).name != roteiro:
+            continue
+        diz(f"configurando {tabela[nome].get('nome', nome)}")
+        # roda como o usuario: o que o roteiro configura e dele, e ele mesmo usa
+        # sudo -n nos passos de sistema
+        codigo = _correr(["bash", str(caminhos.ARQUIVOS / roteiro)], diz)
+        if codigo != 0:
+            return codigo
+    return 0
 
 
 def _correr(argumentos: list[str], diz: Callable[[str], None]) -> int:

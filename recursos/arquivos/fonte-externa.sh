@@ -17,6 +17,14 @@ case "$fonte" in
     lista="/etc/apt/sources.list.d/microsoft-vscode.list"
     linha="deb [arch=amd64,arm64,armhf signed-by=$chaveiro] https://packages.microsoft.com/repos/code stable main"
     ;;
+  docker)
+    # o mesmo repositorio que o get.docker.com configura, sem rodar script de fora
+    url_chave="https://download.docker.com/linux/debian/gpg"
+    chaveiro="/usr/share/keyrings/docker.gpg"
+    lista="/etc/apt/sources.list.d/docker.list"
+    versao="$(. /etc/os-release && echo "$VERSION_CODENAME")"
+    linha="deb [arch=$(dpkg --print-architecture) signed-by=$chaveiro] https://download.docker.com/linux/debian $versao stable"
+    ;;
   *)
     echo "fonte desconhecida: $fonte" >&2
     exit 2

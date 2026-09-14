@@ -472,3 +472,16 @@ details.verif[open] > summary{border-bottom:1px solid var(--borda)}
 .barra .aviso{flex-basis:100%;margin:0 0 4px}
 .item.mudou{border-color:var(--ok);animation:brilho 1.6s ease-out 3}
 @keyframes brilho{0%{box-shadow:0 0 0 0 rgba(61,220,132,.55)}100%{box-shadow:0 0 0 10px rgba(61,220,132,0)}}
+
+/* --- programas: hardware desta maquina ---------------------------------- */
+.hw{margin-bottom:20px}
+.hw h3{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fraco);margin:18px 2px 9px}
+.hw-disp{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;color:var(--fraco);font-size:12px}
+.hw-disp span{background:var(--painel2);border:1px solid var(--borda);border-radius:var(--raio);
+  padding:5px 9px;font-size:11.5px;color:var(--fraco);max-width:100%;overflow-wrap:anywhere}
+.hw-disp b{color:var(--acento);font-weight:700}
+.hw-ok{color:var(--ok);font-size:12.5px;margin:0 2px 4px}
+.hw-nota{color:var(--fraco);font-size:12px;margin:-4px 2px 9px}
+.hw .acoes{margin-top:14px}
+.item input:disabled{opacity:.4}

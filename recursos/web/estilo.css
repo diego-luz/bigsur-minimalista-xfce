@@ -450,6 +450,19 @@ details.verif > summary .ok{color:var(--ok)}
 details.verif > summary .nao{color:var(--erro)}
 details.verif[open] > summary{border-bottom:1px solid var(--borda)}
 
+/* --- easter egg da pagina inicial: hello, friend -------------------------- */
+.amigo{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:34px;
+  color:var(--fraco);font-size:12px;letter-spacing:.08em;opacity:.5;transition:opacity .3s;
+  user-select:none}
+.amigo:hover{opacity:1}
+.amigo svg{width:28px;height:auto;flex-shrink:0;transition:filter .3s}
+.amigo:hover svg{filter:drop-shadow(0 0 8px rgba(255,77,94,.5))}
+/* largura da frase maior mais o cursor e o espacamento, para a mascara nao
+   dancar enquanto digita ou troca de lingua */
+.amigo-texto{min-width:18ch;white-space:pre}
+.amigo-texto::after{content:"▌";color:var(--erro);animation:piscar 1.1s step-end infinite}
+@media (prefers-reduced-motion:reduce){.amigo-texto::after{animation:none}}
+
 /* --- programas: confirmacao junto da barra e destaque do que mudou ------- */
 .barra{bottom:var(--term-h);z-index:5}
 .barra .aviso{flex-basis:100%;margin:0 0 4px}

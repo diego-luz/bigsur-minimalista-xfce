@@ -40,6 +40,24 @@
   <button class="bt sec" id="btSair">Encerrar o painel</button>
 </div>
 
+<!-- easter egg: a mascara da fsociety, de Mr. Robot. So enfeite, entao fica
+     fora do leitor de tela -->
+<div class="amigo" aria-hidden="true" title="fsociety">
+  <svg viewBox="0 0 64 80">
+    <path d="M32 3C50 3 58 15 58 33C58 55 46 77 32 77C18 77 6 55 6 33C6 15 14 3 32 3Z"
+          fill="#e8e2d4" stroke="#b9b09c" stroke-width="1"/>
+    <circle cx="15" cy="47" r="6" fill="#e0707a" opacity=".22"/>
+    <circle cx="49" cy="47" r="6" fill="#e0707a" opacity=".22"/>
+    <path d="M12 28Q19 18 28 25M36 25Q45 18 52 28" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+    <path d="M15 33Q21 29 27 33Q21 36 15 33ZM37 33Q43 29 49 33Q43 36 37 33Z" fill="#111"/>
+    <path d="M32 35L29 46Q32 48 35 46" fill="none" stroke="#9d937e" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M32 52C27 48 19 48 14 54C12 56 10 54 11 52C13 56 22 55 32 55C42 55 51 56 53 52C54 54 52 56 50 54C45 48 37 48 32 52Z" fill="#111"/>
+    <path d="M20 60Q32 68 45 58" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+    <path d="M30 70Q32 71 34 70" fill="none" stroke="#9d937e" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  <span class="amigo-texto" id="amigo" lang="en">Hello, friend.</span>
+</div>
+
 <script>
 const $ = s => document.querySelector(s);
 
@@ -60,6 +78,31 @@ fetch("/api/estado").then(r => r.json()).then(d => {
   }
   faixa.hidden = false;
 }).catch(() => {});
+
+// Hello, friend. Digita, espera, apaga e troca de lingua
+(() => {
+  const alvo = $("#amigo");
+  const frases = [["Hello, friend.", "en"], ["Olá, amigo.", "pt-BR"]];
+  const calmo = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const esperar = ms => new Promise(r => setTimeout(r, ms));
+  (async () => {
+    for (let i = 0; ; i++){
+      const [frase, lingua] = frases[i % frases.length];
+      alvo.lang = lingua;
+      if (calmo){ alvo.textContent = frase; await esperar(4000); continue; }
+      for (let n = 1; n <= frase.length; n++){
+        alvo.textContent = frase.slice(0, n);
+        await esperar(80 + Math.random() * 90);
+      }
+      await esperar(2600);
+      for (let n = frase.length - 1; n >= 0; n--){
+        alvo.textContent = frase.slice(0, n);
+        await esperar(35);
+      }
+      await esperar(500);
+    }
+  })();
+})();
 
 $("#btSair").addEventListener("click", async () => {
   await fetch("/api/sair", {method: "POST"}).catch(() => {});

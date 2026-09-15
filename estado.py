@@ -88,7 +88,13 @@ def restaurar_tudo() -> list[str]:
     for origem in sorted(raiz.rglob("*")):
         if origem.is_dir():
             continue
-        destino = Path("/") / origem.relative_to(raiz)
+        relativo = origem.relative_to(raiz)
+        # so volta o que veio de uma pasta que existe na raiz, como home ou etc;
+        # anotacoes antigas gravadas aqui dentro (xfconf, lista de pacotes)
+        # iriam parar em /xfconf
+        if len(relativo.parts) < 2 or not (Path("/") / relativo.parts[0]).is_dir():
+            continue
+        destino = Path("/") / relativo
         try:
             destino.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(origem, destino)

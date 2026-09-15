@@ -126,6 +126,8 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
         "picom_vsync": "false" if virtual else "true",
         "fontes": str(caminhos.FONTES),
         "arquivos": str(caminhos.ARQUIVOS),
+        # anotacoes para consulta ficam aqui, fora da pasta de backup
+        "estado_dir": str(caminhos.ESTADO_DIR),
     })
     return ctx
 
@@ -253,10 +255,10 @@ class Motor:
         else:
             conteudo = p.get("conteudo", "")
         conteudo = resolver(conteudo, self.ctx)
-        estado.copia_de_seguranca(destino)
         if self.simular:
             self.diz(f"  [simulacao] escreveria {destino}")
             return
+        estado.copia_de_seguranca(destino)
         destino.parent.mkdir(parents=True, exist_ok=True)
         destino.write_text(conteudo)
         if p.get("modo"):
@@ -271,10 +273,10 @@ class Motor:
         abre, fecha = f"/* {marca} */", f"/* fim {marca} */"
         if p.get("comentario") == "#":
             abre, fecha = f"# {marca}", f"# fim {marca}"
-        estado.copia_de_seguranca(destino)
         if self.simular:
             self.diz(f"  [simulacao] bloco '{marca}' em {destino}")
             return
+        estado.copia_de_seguranca(destino)
         destino.parent.mkdir(parents=True, exist_ok=True)
         texto = destino.read_text() if destino.exists() else ""
         texto = re.sub(re.escape(abre) + r".*?" + re.escape(fecha), "", texto, flags=re.S)
@@ -404,6 +406,9 @@ class Motor:
 
     def passo_backup(self, p: dict) -> None:
         for bruto in resolver(p.get("caminhos", []), self.ctx):
+            if self.simular:
+                self.diz(f"  [simulacao] guardaria {bruto}")
+                continue
             if estado.copia_de_seguranca(Path(bruto).expanduser()):
                 self.diz(f"  guardado: {bruto}")
 

@@ -27,12 +27,14 @@ tipo = "script"
 dizer = "anotando o estado do xfconf, util para consulta depois"
 tolera_falha = true
 corpo = '''
-destino="${XDG_STATE_HOME:-$HOME/.local/state}/d3bian-init/backup/xfconf"
+# fora da pasta backup: o restaurar devolve o que esta la para o mesmo caminho
+# a partir da raiz, e isto e so anotacao
+destino="$D3_ESTADO_DIR/xfconf-antes"
 mkdir -p "$destino"
 xfconf-query -l | tail -n +2 | while read -r canal; do
   canal="$(printf '%s' "$canal" | tr -d ' ')"
   [ -n "$canal" ] && xfconf-query -c "$canal" -lv > "$destino/$canal.txt" 2>/dev/null
 done
-dpkg-query -W -f='${binary:Package}\n' > "$destino/../pacotes-antes.txt" 2>/dev/null || true
+dpkg-query -W -f='${binary:Package}\n' > "$D3_ESTADO_DIR/pacotes-antes.txt" 2>/dev/null || true
 echo "estado do xfconf anotado"
 '''

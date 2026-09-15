@@ -1,5 +1,5 @@
 --[[
-Aneis do widget da area de trabalho, na versao "aneis" do d3bian-init-bigsur.
+Aneis do widget da area de trabalho, na versao "aneis" do d3bian-init-bigsur-xfce.
 
 Adaptado do MX-CoreBlue (MX Linux, mx-conky-data), que parte do Clock Rings de
 londonali1010, reeditado por despot77 e Altin, e foi usado no setup Xfce Big

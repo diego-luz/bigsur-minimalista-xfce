@@ -1,17 +1,17 @@
-# d3bian-init-bigsur
+# d3bian-init-bigsur-xfce
 
 Painel local para preparar e ajustar um Debian com XFCE, com visual inspirado no
 macOS Big Sur. Roda só com a biblioteca padrão do Python.
 
 ```sh
-cd ..                      # a pasta que contém d3bian_init_bigsur
-python3 -m d3bian_init_bigsur          # abre o painel no navegador
-python3 -m d3bian_init_bigsur --help   # subcomandos para o terminal
+cd ..                      # a pasta que contém d3bian_init_bigsur_xfce
+python3 -m d3bian_init_bigsur_xfce          # abre o painel no navegador
+python3 -m d3bian_init_bigsur_xfce --help   # subcomandos para o terminal
 ```
 
 ## Créditos
 
-O d3bian-init-bigsur não cria temas: baixa, instala e ajusta trabalho de outras
+O d3bian-init-bigsur-xfce não cria temas: baixa, instala e ajusta trabalho de outras
 pessoas. Todo o mérito visual é delas.
 
 | O quê | Projeto | Autor |

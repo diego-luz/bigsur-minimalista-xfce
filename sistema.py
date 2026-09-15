@@ -211,7 +211,7 @@ def _verificar() -> list[dict]:
     liberado = sudo_liberado()
     add("Permissao de administrador", liberado,
         "autorizada nesta sessao" if liberado
-        else "sem credencial; abra o painel pelo comando d3bian-init-bigsur")
+        else "sem credencial; abra o painel pelo comando d3bian-init-bigsur-xfce")
 
     gb = espaco_livre_gb()
     add("Espaco em disco", gb < 0 or gb >= 2.0,

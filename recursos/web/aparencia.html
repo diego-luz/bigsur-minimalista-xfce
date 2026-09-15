@@ -247,6 +247,7 @@ const NOMES = {sim: "Com", nao: "Sem", claro: "Claro", escuro: "Escuro",
 const NOMES_POR_CHAVE = {
   bloqueio: {nao: "Nunca", 5: "5 minutos", 10: "10 minutos", 15: "15 minutos", 30: "30 minutos"},
   login_desfoque: {sim: "Desfocado", nao: "Nítido"},
+  widget: {sim: "Simples", aneis: "Anéis", nao: "Sem"},
 };
 const rotulo = (v, chave) =>
   (NOMES_POR_CHAVE[chave] || {})[v] || NOMES[v] || v[0].toUpperCase() + v.slice(1);
@@ -332,7 +333,7 @@ function desenharEsquema(){
   $("#eMenu").hidden    = estado.menu_global !== "sim";
   $("#eTitulo").hidden  = estado.titulo_no_painel !== "sim";
   $("#eEncaixe").hidden = estado.janelas !== "sim";
-  $("#eWidget").hidden  = estado.widget !== "sim";
+  $("#eWidget").hidden  = estado.widget === "nao";
   $("#eDock").hidden    = estado.dock !== "sim";
   const cor = estado.tema === "escuro" ? "claro" : "escuro";
   const logo = estado.logo || "debian";
@@ -355,7 +356,7 @@ function desenhar(){
   desenharGaleria();
   desenharMudancas();
   const tema = estado.tema === "claro" ? "claro" : "escuro";
-  const w = estado.widget === "sim" ? "com" : "sem";
+  const w = estado.widget === "nao" ? "sem" : "com";
   previa = `${tema}-${w}-widget`;
   const img = $("#img");
   img.onerror = () => { img.hidden = true; $("#semfoto").hidden = false; };

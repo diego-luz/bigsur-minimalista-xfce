@@ -22,7 +22,7 @@ def nome_do_momento(cfg: dict[str, str] | None = None) -> str:
     """Qual previa corresponde as preferencias que estao valendo agora."""
     cfg = cfg or config.ler()
     tema = "escuro" if cfg.get("tema") == "escuro" else "claro"
-    widget = "com" if cfg.get("widget") == "sim" else "sem"
+    widget = "sem" if cfg.get("widget") == "nao" else "com"
     return f"{tema}-{widget}-widget"
 
 

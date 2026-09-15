@@ -25,6 +25,8 @@ pessoas. Todo o mérito visual é delas.
 | Temas do lançador | [rofi](https://github.com/adi1090x/rofi) | adi1090x |
 | Dock | [plank-reloaded](https://github.com/zquestz/plank-reloaded) | zquestz |
 | Fonte Inter | pacote `fonts-inter` do Debian | Rasmus Andersson |
+| Widget de anéis | [MX-CoreBlue](https://github.com/MX-Linux/mx-conky-data/tree/master/MX-CoreBlue), a partir do Clock Rings | MX Linux; londonali1010, despot77 e Altin |
+| Ideia do widget de anéis | [Xfce Big Sur setup](https://www.opencode.net/lsteam/xfce-big-sur-setup-file) | lsteam |
 
 XFCE, LightDM, light-locker, picom, Conky, Kvantum, o menu global e os demais
 pacotes vêm do repositório oficial do Debian.

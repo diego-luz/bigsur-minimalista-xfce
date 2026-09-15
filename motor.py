@@ -37,6 +37,13 @@ DESTAQUE_EXTERNO = {
     "verde": "green", "cinza": "grey",
 }
 
+# as mesmas cores que a pagina usa no esquema; o widget de aneis pinta com elas
+DESTAQUE_COR = {
+    "padrao": "0860f2", "azul": "2e7cf7", "roxo": "9a57a3", "rosa": "e55e9c",
+    "vermelho": "ed5f5d", "laranja": "e9873a", "amarelo": "f3ba4b",
+    "verde": "79b757", "cinza": "8c8c8c",
+}
+
 
 def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
     escuro = cfg.get("tema") == "escuro"
@@ -101,6 +108,7 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
         "fonte_ui": "SF Pro Display" if cfg.get("fonte_interface") == "sf-pro" else "Inter",
         "fonte_mono": "Fira Code",
         "destaque_externo": destaque,
+        "widget_cor": DESTAQUE_COR.get(cfg.get("destaque", "padrao"), DESTAQUE_COR["padrao"]),
         "papel_arquivo": str(papeis.escolhido(cfg) or ""),
         # login_dir e onde os arquivos sao montados, numa pasta temporaria que
         # a receita apaga ao terminar, sem deixar nada na pasta pessoal;

@@ -56,8 +56,11 @@ OPCOES: tuple[Opcao, ...] = (
           "Barra de menus no topo", "Menu do programa ativo, como no macOS"),
     Opcao("dock", "sim", SIM_NAO,
           "Dock inferior", "Barra de atalhos com zoom"),
-    Opcao("widget", "sim", SIM_NAO,
-          "Widget na area de trabalho", "Relogio, data, processador, memoria e disco"),
+    # "sim" e o widget simples e continua com esse nome para nao invalidar
+    # configuracoes ja salvas; "aneis" e o do setup Xfce Big Sur do lsteam
+    Opcao("widget", "sim", ("sim", "aneis", "nao"),
+          "Widget na area de trabalho",
+          "Simples: relogio e barras. Aneis: relogio analogico, processos e rede"),
     Opcao("efeitos", "sim", SIM_NAO,
           "Sombras e cantos arredondados", "Pesa um pouco no processador de video"),
     Opcao("janelas", "sim", SIM_NAO,

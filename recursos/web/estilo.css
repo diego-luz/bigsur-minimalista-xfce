@@ -1,5 +1,5 @@
 /* ===========================================================================
-   d3bian-init - estilo de terminal
+   d3bian-init-bigsur - estilo de terminal
    Azul sobre preto, tudo monoespacado, botao entre colchetes.
    O azul fica nos destaques; o texto corrido e cinza claro, porque cor
    saturada em paragrafo inteiro cansa a vista depressa.
@@ -164,6 +164,9 @@ li::marker{color:var(--acento2)}
 
 .rodape{color:var(--fraco);font-size:12px;margin-top:24px;
         border-top:1px solid var(--borda);padding-top:14px;line-height:1.7}
+.creditos p{margin:0}
+.creditos ul{font-size:12px;margin:4px 0 8px}
+.creditos a{color:var(--ciano)}
 code{background:var(--painel2);border:1px solid var(--borda);padding:1px 5px;
      border-radius:var(--raio);font-size:11.5px;color:var(--ciano)}
 

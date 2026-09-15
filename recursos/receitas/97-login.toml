@@ -37,7 +37,7 @@ modelo = "login-greeter.conf"
 tipo = "arquivo"
 destino = "@@login_dir@@/lightdm.conf.d/90-d3bian.conf"
 conteudo = '''
-# Escrito pelo d3bian-init.
+# Escrito pelo d3bian-init-bigsur.
 [Seat:*]
 greeter-session=lightdm-gtk-greeter
 # true mostra os campos de nome e senha; false, a lista de usuarios

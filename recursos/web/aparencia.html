@@ -1,8 +1,8 @@
-<title>Aparência - d3bian-init</title>
+<title>Aparência - d3bian-init-bigsur</title>
 <link rel="stylesheet" href="estilo.css">
 <script src="comum.js"></script>
 
-<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
+<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init-bigsur <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
 
 <a class="voltar" href="/"><span aria-hidden="true">&larr;</span> Voltar ao início</a>
 <h1>Aparência do desktop</h1>
@@ -648,7 +648,7 @@ $("#btReiniciarLogin").addEventListener("click", async () => {
   const r = await pedir("/api/reiniciar-login", {confirmar: true});
   const motivos = {
     login_nao_aplicado: "A tela de login nova ainda não foi aplicada. Clique em Aplicar primeiro.",
-    sem_permissao: "Sem permissão de administrador. Abra o painel pelo comando d3bian-init.",
+    sem_permissao: "Sem permissão de administrador. Abra o painel pelo comando d3bian-init-bigsur.",
     ocupado: "Já tem uma tarefa rodando. Espere terminar.",
   };
   if (!r.iniciado){

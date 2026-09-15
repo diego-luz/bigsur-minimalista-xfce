@@ -1,4 +1,4 @@
-"""Linha de comando do d3bian-init.
+"""Linha de comando do d3bian-init-bigsur.
 
 Sem argumento nenhum ele faz o que a maioria quer: pede a senha uma vez e abre
 o painel no navegador. Os subcomandos existem para quem prefere terminal, e
@@ -150,7 +150,7 @@ def cmd_capturar(args) -> int:
 def cmd_restaurar(args) -> int:
     if not args.sim:
         print("  isto devolve os arquivos guardados antes das alteracoes.")
-        print("  confirme com: d3bian-init restaurar --sim")
+        print("  confirme com: d3bian-init-bigsur restaurar --sim")
         return 1
     garantir_sudo()
     feitos = estado.restaurar_tudo()
@@ -164,9 +164,9 @@ def cmd_restaurar(args) -> int:
 
 def construir() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="d3bian-init",
+        prog="d3bian-init-bigsur",
         description="Prepara e ajusta um Debian com XFCE por uma pagina local.")
-    p.add_argument("--versao", action="version", version=f"d3bian-init {VERSAO}")
+    p.add_argument("--versao", action="version", version=f"d3bian-init-bigsur {VERSAO}")
     sub = p.add_subparsers(dest="comando")
 
     w = sub.add_parser("web", help="abre o painel no navegador (padrao)")

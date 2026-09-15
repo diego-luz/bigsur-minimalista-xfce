@@ -35,7 +35,7 @@ parar = threading.Event()
 
 
 class Painel(BaseHTTPRequestHandler):
-    server_version = "d3bian-init"
+    server_version = "d3bian-init-bigsur"
 
     def log_message(self, *_a) -> None:
         pass
@@ -333,7 +333,7 @@ def subir(porta: int = PORTA_PADRAO, abrir: bool = True) -> int:
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
     endereco = f"http://127.0.0.1:{porta}/"
-    print(f"\n  d3bian-init aberto em {endereco}")
+    print(f"\n  d3bian-init-bigsur aberto em {endereco}")
     print("  Feche pelo botao na pagina, ou com Ctrl+C aqui.\n")
     if abrir:
         try:

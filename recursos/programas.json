@@ -142,7 +142,8 @@
         {
           "pkg": "flameshot",
           "nome": "Flameshot",
-          "desc": "Captura de tela com anotacoes, seta e destaque"
+          "desc": "Captura de tela com anotacoes, seta e destaque. Vira o Print Screen e abre com o sistema",
+          "depois": "flameshot.sh"
         },
         {
           "pkg": "copyq",

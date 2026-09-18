@@ -58,6 +58,9 @@ for p in $plugins; do
   ids="$ids        <value type=\"int\" value=\"$i\"/>
 "
   case "$p" in
+    # menu-opacity abaixo de 100 da ao menu uma janela com transparencia; sem
+    # ela a margem transparente que o WhiteSur poe em volta sai preta. O
+    # instalador do tema tenta o mesmo, mas nos .rc que o whiskermenu 2 nao usa
     whiskermenu)
       blocos="$blocos    <property name=\"plugin-$i\" type=\"string\" value=\"whiskermenu\">
       <property name=\"button-icon\" type=\"string\" value=\"$D3_LOGO_ARQUIVO\"/>
@@ -65,6 +68,7 @@ for p in $plugins; do
       <property name=\"show-button-title\" type=\"bool\" value=\"false\"/>
       <property name=\"menu-width\" type=\"int\" value=\"460\"/>
       <property name=\"menu-height\" type=\"int\" value=\"560\"/>
+      <property name=\"menu-opacity\" type=\"int\" value=\"95\"/>
       <property name=\"item-icon-size\" type=\"int\" value=\"2\"/>
       <property name=\"category-icon-size\" type=\"int\" value=\"1\"/>
       <property name=\"launcher-show-description\" type=\"bool\" value=\"false\"/>

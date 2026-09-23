@@ -1,8 +1,9 @@
 [modulo]
 id = "44"
 nome = "janelas"
-titulo = "Encaixe e atalhos de janela"
-afetada_por = ["janelas"]
+titulo = "Encaixe, bordas e atalhos de janela"
+# o 40 e o 30 trocam o tema do xfwm4, e a copia com bordas largas sai dele
+afetada_por = ["janelas", "tema", "destaque"]
 
 [[passo]]
 tipo = "script"
@@ -14,17 +15,31 @@ for k in '<Super>Left' '<Super>Right' '<Super>Up' '<Super>Down' \
          '<Super>1' '<Super>2' '<Super>3' '<Super>4' '<Super>f'; do
   xfconf-query -c xfce4-keyboard-shortcuts -p "/xfwm4/custom/$k" -r 2>/dev/null || true
 done
-for k in '<Super>c' '<Super>x' '<Super><Shift>Left' '<Super><Shift>Right'; do
+for k in '<Super>c' '<Super>x' '<Super>z' '<Super><Shift>Left' '<Super><Shift>Right'; do
   xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/$k" -r 2>/dev/null || true
 done
-rm -f "$HOME/.local/bin/d3bian-janelas"
+for f in d3bian-janelas d3bian-layouts d3bian-bordas; do
+  if [ -e "$HOME/.local/bin/$f" ]; then d3_antes "$HOME/.local/bin/$f"; fi
+  rm -f "$HOME/.local/bin/$f"
+done
+# volta ao tema sem as bordas largas
+tema=$(xfconf-query -c xfwm4 -p /general/theme 2>/dev/null || true)
+if [ "${tema%-bordas}" != "$tema" ]; then
+  d3_xfconf xfwm4 /general/theme string
+  xfconf-query -c xfwm4 -p /general/theme -s "${tema%-bordas}"
+fi
+for d in "$HOME"/.themes/*-bordas; do
+  [ -d "$d" ] || continue
+  d3_antes "$d"
+  rm -rf "$d"
+done
 echo "atalhos de janela removidos"
 '''
 
 [[passo]]
 tipo = "apt"
 se = "janelas == sim"
-pacotes = ["wmctrl", "xdotool", "x11-utils"]
+pacotes = ["wmctrl", "xdotool", "x11-utils", "python3-gi", "gir1.2-gtk-3.0"]
 
 [[passo]]
 tipo = "copiar"
@@ -33,10 +48,41 @@ origem = "@@arquivos@@/janelas.sh"
 destino = "~/.local/bin/d3bian-janelas"
 
 [[passo]]
+tipo = "copiar"
+se = "janelas == sim"
+origem = "@@arquivos@@/layouts.py"
+destino = "~/.local/bin/d3bian-layouts"
+
+[[passo]]
+tipo = "copiar"
+se = "janelas == sim"
+origem = "@@arquivos@@/bordas.py"
+destino = "~/.local/bin/d3bian-bordas"
+
+[[passo]]
 tipo = "comando"
 se = "janelas == sim"
 tolera_falha = true
-argumentos = ["chmod", "755", "@@HOME@@/.local/bin/d3bian-janelas"]
+argumentos = ["chmod", "755", "@@HOME@@/.local/bin/d3bian-janelas",
+              "@@HOME@@/.local/bin/d3bian-layouts", "@@HOME@@/.local/bin/d3bian-bordas"]
+
+# a borda dos temas tem 1 ou 2 pixels e quase nao da para agarrar; o
+# d3bian-bordas faz uma copia do tema com 4 pixels a mais, na cor da barra
+[[passo]]
+tipo = "script"
+se = "janelas == sim"
+dizer = "alargando as bordas das janelas para redimensionar"
+tolera_falha = true
+corpo = '''
+tema=$(xfconf-query -c xfwm4 -p /general/theme)
+tema="${tema%-bordas}"
+d3_pasta "$HOME/.themes"
+d3_antes "$HOME/.themes/$tema-bordas"
+novo=$("$HOME/.local/bin/d3bian-bordas" "$tema" 4)
+d3_xfconf xfwm4 /general/theme string
+xfconf-query -c xfwm4 -p /general/theme -s "$novo"
+echo "tema das janelas: $novo"
+'''
 
 # metades e quartos sao do proprio xfwm4; o script cobre so o que ele nao faz
 [[passo]]
@@ -67,7 +113,8 @@ atalho '/xfwm4/custom/<Super>4'     tile_down_right_key
 j="$HOME/.local/bin/d3bian-janelas"
 atalho '/commands/custom/<Super>c'            "$j centro"
 atalho '/commands/custom/<Super>x'            "$j quase-cheia"
+atalho '/commands/custom/<Super>z'            "$HOME/.local/bin/d3bian-layouts"
 atalho '/commands/custom/<Super><Shift>Left'  "$j 2-3-esquerda"
 atalho '/commands/custom/<Super><Shift>Right' "$j 1-3-direita"
-echo "Super e setas para metades, Super e 1 a 4 para quartos, Super+C centraliza"
+echo "Super e setas para metades, Super e 1 a 4 para quartos, Super+C centraliza, Super+Z abre os layouts"
 '''

@@ -64,7 +64,7 @@ OPCOES: tuple[Opcao, ...] = (
     Opcao("efeitos", "sim", SIM_NAO,
           "Sombras e cantos arredondados", "Pesa um pouco no processador de video"),
     Opcao("janelas", "sim", SIM_NAO,
-          "Encaixe de janelas", "Atalhos para metades, quartos e centralizar"),
+          "Encaixe de janelas", "Bordas mais largas, atalhos e layouts no Super+Z"),
     Opcao("titulo_no_painel", "nao", SIM_NAO,
           "Titulo da janela no painel", "Janela maximizada mostra titulo e botoes na barra"),
     # numa maquina recem instalada nao ha papel de parede a preservar, entao o

@@ -69,6 +69,21 @@ canal = "xfwm4"
 chave = "/general/theme"
 valor = "@@gtk_tema@@"
 
+# com o encaixe ligado o 44 troca o tema acima pela copia de bordas largas;
+# se so esta receita rodar de novo, a copia e refeita aqui
+[[passo]]
+tipo = "script"
+se = "janelas == sim"
+tolera_falha = true
+corpo = '''
+b="$HOME/.local/bin/d3bian-bordas"
+[ -x "$b" ] || exit 0
+d3_antes "$HOME/.themes/$D3_GTK_TEMA-bordas"
+novo=$("$b" "$D3_GTK_TEMA" 4)
+d3_xfconf xfwm4 /general/theme string
+xfconf-query -c xfwm4 -p /general/theme -s "$novo"
+'''
+
 [[passo]]
 tipo = "xfconf"
 canal = "xfwm4"

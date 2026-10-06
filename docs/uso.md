@@ -49,9 +49,12 @@ O completo é o [bigsur-xfce](https://git.saberdl.dev.br/d3bian/bigsur-xfce).
 
 ## O que fica onde
 
-Configuração, estado e cópias de segurança ficam em
-`~/.config/d3bian-init-bigsur-minimalista` e `~/.local/state/d3bian-init-bigsur-minimalista`,
-separados do bigsur completo — os dois podem conviver na mesma máquina.
+Configuração, estado, cópias de segurança e downloads ficam em
+`~/.config/d3bian-init-bigsur-minimalista`, `~/.local/state/d3bian-init-bigsur-minimalista`
+e `~/.local/share/d3bian-init-bigsur-minimalista`, separados do bigsur completo; a tela
+de login também tem nomes próprios (`/usr/share/themes/d3bian-login-minimalista`,
+`/etc/lightdm/lightdm.conf.d/91-d3bian-minimalista.conf`) — os dois podem conviver na
+mesma máquina.
 
 ## Sistemas
 

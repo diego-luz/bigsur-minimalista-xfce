@@ -51,8 +51,9 @@ for t in "$HOME/.themes/WhiteSur-Light$D3_GTK_SUFIXO" \
          "$HOME/.themes/WhiteSur-Light" "$HOME/.themes/WhiteSur-Dark"; do
   [ -d "$t" ] || continue
   d3_antes "/usr/share/themes/$(basename "$t")"
-  sudo -n rm -rf "/usr/share/themes/$(basename "$t")"
-  sudo -n cp -a "$t" /usr/share/themes/
+  # root:root e sem escrita para outros; passa por uma pasta nova do root
+  # (diario.py, d3_raiz_instalar), e nao herda o dono de ~/.themes
+  d3_raiz_instalar "$t" "/usr/share/themes/$(basename "$t")"
 done
 if [ ! -d "$HOME/.themes/$D3_GTK_TEMA" ]; then
   echo "atencao: esperava o tema $D3_GTK_TEMA e ele nao foi gerado"

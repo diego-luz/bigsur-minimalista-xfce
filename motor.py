@@ -15,7 +15,6 @@ import re
 import shlex
 import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -99,11 +98,12 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
         "fonte_mono": "Fira Code",
         "destaque_externo": destaque,
         "papel_arquivo": str(papeis.escolhido(cfg) or ""),
-        # login_dir e onde os arquivos sao montados, numa pasta temporaria que
-        # a receita apaga ao terminar, sem deixar nada na pasta pessoal;
-        # login_raiz e onde o greeter os enxerga. A previa troca os dois e
-        # desliga login_instalar
-        "login_dir": str(Path(tempfile.gettempdir()) / f"d3bian-init-minimalista-login-{os.getuid()}"),
+        # login_dir e onde os arquivos sao montados: uma pasta nova e fechada
+        # (0700, tempfile.mkdtemp) a cada execucao, que receitas.py cria e apaga
+        # (um nome fixo em /tmp poderia ser criado antes por outra conta);
+        # vazio aqui, a receita do login recusa rodar. login_raiz e onde o
+        # greeter os enxerga. A previa troca os dois e desliga login_instalar
+        "login_dir": "",
         "login_raiz": "/usr/share/backgrounds/d3bian-init-minimalista",
         "login_instalar": "sim",
         "login_tema_base": str(login_tema),
@@ -152,6 +152,25 @@ def condicao_atende(expressao: str, ctx: dict[str, str]) -> bool:
 # arquivo de configuracao mexido pelo usuario: fica o dele, sem perguntar
 APT_SEM_PERGUNTAS = ["-o", "Dpkg::Options::=--force-confdef",
                      "-o", "Dpkg::Options::=--force-confold"]
+
+
+# copia como root de uma pasta da pessoa ($1) para o sistema ($2): passa por
+# uma pasta nova do root, recusa link simbolico na raiz, tira link que aponte
+# para fora da arvore, fica root:root e sem escrita para grupo e outros
+COPIA_ROOT = r'''
+set -eu
+r=$(mktemp -d)
+trap 'rm -rf "$r"' EXIT
+[ ! -L "$1" ] && [ -e "$1" ] || { echo "recusado: $1" >&2; exit 1; }
+cp -R -P --no-preserve=all -- "$1" "$r/c"
+[ ! -L "$r/c" ] || { echo "recusado: $1" >&2; exit 1; }
+python3 -I -c "$3" "$r/c"
+chown -R root:root "$r/c"
+chmod -R u+rwX,go+rX,go-w "$r/c"
+mkdir -p -- "$(dirname "$2")"
+rm -rf -- "$2"
+mv -T -- "$r/c" "$2"
+'''
 
 
 class ErroDePasso(Exception):
@@ -303,40 +322,44 @@ class Motor:
         self.diz(f"  bloco '{marca}' em {destino}")
 
     def passo_git(self, p: dict) -> None:
+        """Clona ou atualiza um repositorio num commit exato (40 hex), conferido.
+
+        So commit fixo: um ramo (main, master, HEAD) mudaria por baixo do
+        projeto. O git roda sem os hooks do clone (que ficam numa pasta do
+        usuario) e o resultado tem de ser exatamente o commit pedido, com a
+        arvore limpa; senao o passo falha em vez de seguir com o que estava la."""
         destino = self._caminho(p["destino"])
         url = resolver(p["url"], self.ctx)
-        ref = resolver(p.get("ref", "HEAD"), self.ctx)
+        ref = resolver(p.get("ref", ""), self.ctx)
+        if not re.fullmatch(r"[0-9a-f]{40}", ref):
+            raise ErroDePasso(f"repositorio sem commit fixo (ref = {ref or 'vazio'}): {url}")
         if self.simular:
-            self.diz(f"  [simulacao] clonaria {url} em {destino}")
+            self.diz(f"  [simulacao] buscaria {url} no commit {ref[:12]} em {destino}")
             return
-        destino.parent.mkdir(parents=True, exist_ok=True)
-        # ref com o SHA do commit: o que roda e o que foi conferido, e nao o
-        # que estiver no ramo no dia (git clone --branch nao aceita SHA)
-        fixo = re.fullmatch(r"[0-9a-f]{40}", ref) is not None
-        git = ["git", "-C", str(destino)]
+        git = ["git", "-c", "core.hooksPath=/dev/null", "-C", str(destino)]
         if (destino / ".git").is_dir():
             self.diz(f"  atualizando {destino.name}")
             self._executa([*git, "remote", "set-url", "origin", url])
-            if self._executa([*git, "fetch", "--depth", "1", "origin", ref]) == 0:
-                self._executa([*git, "checkout", "-q", "-f", "FETCH_HEAD"])
         else:
             self.diz(f"  clonando {destino.name}")
             nova = not destino.exists()
             destino.mkdir(parents=True, exist_ok=True)
             if (self._executa([*git, "init", "-q"]) != 0
-                    or self._executa([*git, "remote", "add", "origin", url]) != 0
-                    or self._executa([*git, "fetch", "--depth", "1", "origin", ref]) != 0
-                    or self._executa([*git, "checkout", "-q", "-f", "FETCH_HEAD"]) != 0):
+                    or self._executa([*git, "remote", "add", "origin", url]) != 0):
                 if nova:
                     shutil.rmtree(destino, ignore_errors=True)
-                raise ErroDePasso(f"nao consegui clonar {url} ({ref})")
+                raise ErroDePasso(f"nao consegui clonar {url}")
             self._anotar("criado", caminho=str(destino))
-        if fixo:
-            atual = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True,
-                                   text=True).stdout.strip()
-            if atual != ref:
-                raise ErroDePasso(f"{destino.name} esta em {atual[:12] or '?'}, e nao no "
-                                  f"commit conferido {ref[:12]}")
+        if self._executa([*git, "fetch", "-q", "--depth", "1", "origin", ref]) != 0:
+            raise ErroDePasso(f"nao consegui buscar {url} no commit {ref[:12]}")
+        if self._executa([*git, "checkout", "-q", "-f", "--detach", "FETCH_HEAD"]) != 0:
+            raise ErroDePasso(f"nao consegui usar o commit {ref[:12]} de {url}")
+        self._executa([*git, "clean", "-q", "-ffdx"])
+        atual = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        sujo = subprocess.run([*git, "status", "--porcelain", "--ignored"], capture_output=True,
+                              text=True).stdout.strip()
+        if atual != ref or sujo:
+            raise ErroDePasso(f"{destino.name} nao ficou no commit {ref[:12]} com a arvore limpa")
 
     def passo_comando(self, p: dict) -> None:
         argumentos = [str(x) for x in resolver(p["argumentos"], self.ctx)]
@@ -362,7 +385,9 @@ class Motor:
         # so o trecho que chama o sudo ele mesmo usa a senha ja confirmada (que
         # vale para este terminal); os outros rodam fora dele, numa sessao nova,
         # entao um instalador de terceiros que tente "sudo" por conta propria falha
-        usa_sudo = re.search(r"\bsudo\b", corpo) is not None
+        # (as funcoes d3_raiz_* do diario tambem chamam o sudo). Por isso codigo
+        # de terceiros (install.sh) nunca fica no mesmo trecho que o sudo
+        usa_sudo = re.search(r"\bsudo\b|\bd3_raiz_", corpo) is not None
         if not usa_sudo:
             ambiente["SUDO_ASKPASS"] = "/bin/false"
         estado.registrar("+ shell:\n" + corpo)
@@ -398,9 +423,10 @@ class Motor:
         if existia:
             estado.copia_de_seguranca(destino)
         if p.get("root"):
-            self._executa(["mkdir", "-p", str(destino.parent)], root=True)
-            self._executa(["rm", "-rf", str(destino)], root=True)
-            if self._executa(["cp", "-a", str(origem), str(destino)], root=True) != 0:
+            # a origem e da pessoa: o root copia primeiro para uma pasta nova
+            # dele (sem seguir link e sem herdar o dono), e so dali instala
+            if self._executa(["sh", "-c", COPIA_ROOT, "sh", str(origem), str(destino),
+                              diario.LINKS_PY], root=True) != 0:
                 raise ErroDePasso(f"nao consegui copiar para {destino}")
         else:
             destino.parent.mkdir(parents=True, exist_ok=True)

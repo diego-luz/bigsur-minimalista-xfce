@@ -116,6 +116,29 @@ def _limpar_vazias(pasta: Path, diz: Diz) -> None:
         pasta = pasta.parent
 
 
+# o que versoes anteriores criavam com o mesmo nome do d3bian-init-bigsur-xfce
+ANTIGOS_DIVIDIDOS = {
+    "/usr/share/themes/d3bian-login",
+    "/etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf",
+    "/etc/lightdm/lightdm.conf.d/90-d3bian.conf",
+}
+
+
+def _bigsur_em_uso() -> bool:
+    """O d3bian-init-bigsur-xfce tem alguma etapa aplicada nesta conta."""
+    marcas = caminhos.ESTADO_DIR.parent / "d3bian-init" / "aplicado"
+    return marcas.is_dir() and any(marcas.iterdir())
+
+
+def _dividido_em_uso(caminho: Path, diz: Diz) -> bool:
+    if str(caminho) in ANTIGOS_DIVIDIDOS or caminhos.DADOS_DIR_ANTIGO in caminho.parents \
+            or caminho == caminhos.DADOS_DIR_ANTIGO:
+        if _bigsur_em_uso():
+            diz(f"  {caminho} fica: o d3bian-init-bigsur-xfce ainda usa")
+            return True
+    return False
+
+
 # Fora da pasta pessoal, o desfazer (que roda como root ali) so apaga estes: o
 # diario fica numa pasta do usuario e nao decide sozinho o que o root apaga.
 # Sao os caminhos de sistema que as receitas criam; quem acrescentar uma
@@ -125,19 +148,34 @@ APAGAVEIS_FORA_DE_CASA = {
       for v in ("Light", "Dark") for s in ("", "-solid") for c in motor.DESTAQUE_EXTERNO.values()),
     "/usr/share/icons/WhiteSur", "/usr/share/icons/WhiteSur-dark",
     "/usr/share/icons/WhiteSur-light", "/usr/share/icons/WhiteSur-cursors",
-    "/usr/share/backgrounds/d3bian-init-minimalista", "/usr/share/themes/d3bian-login",
-    "/etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf",
-    "/etc/lightdm/lightdm.conf.d/90-d3bian.conf",
+    "/usr/share/backgrounds/d3bian-init-minimalista", "/usr/share/themes/d3bian-login-minimalista",
+    "/etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/91-d3bian-minimalista.conf",
+    "/etc/lightdm/lightdm.conf.d/91-d3bian-minimalista.conf",
+    # nomes de versoes anteriores, divididos com o d3bian-init-bigsur-xfce: so
+    # para desfazer uma instalacao antiga, e so se o bigsur-xfce nao estiver aplicado
+    *ANTIGOS_DIVIDIDOS,
     # fontes de terceiros da pagina de programas (fonte-externa.sh)
     *programas.ARQUIVOS_DE_FONTE,
     str(caminhos.BACKUP_SISTEMA),
 }
 
 
+# o que o root pode devolver da copia de seguranca dele: os mesmos caminhos de
+# sistema que as receitas mexem (a pasta das copias em si nao)
+RESTAURAVEIS_FORA_DE_CASA = APAGAVEIS_FORA_DE_CASA - {str(caminhos.BACKUP_SISTEMA)}
+
+
 def _apagavel(caminho: Path) -> bool:
-    if caminho.is_relative_to(Path.home()):
-        return not caminho.is_symlink() or caminho.resolve().is_relative_to(Path.home())
-    return str(caminho) in APAGAVEIS_FORA_DE_CASA
+    bruto = str(caminho)
+    # caminho normalizado e sem "..": a lista fica numa pasta do usuario
+    if not diario.caminho_limpo(bruto):
+        return False
+    casa = Path.home()
+    if caminho.is_relative_to(casa):
+        real = Path(os.path.realpath(caminho))
+        # nunca a casa inteira nem uma pasta logo abaixo dela (Documentos, .config...)
+        return real.is_relative_to(casa) and len(real.relative_to(casa).parts) >= 2
+    return bruto in APAGAVEIS_FORA_DE_CASA
 
 
 def _apagar(caminho: Path, diz: Diz) -> None:
@@ -148,6 +186,8 @@ def _apagar(caminho: Path, diz: Diz) -> None:
         return
     if not _apagavel(caminho):
         diz(f"  atencao: confira e apague a mao, se for do projeto: {caminho}")
+        return
+    if _dividido_em_uso(caminho, diz):
         return
     if _da_pessoa(caminho):
         if caminho.is_dir() and not caminho.is_symlink():
@@ -162,6 +202,9 @@ def _apagar(caminho: Path, diz: Diz) -> None:
 
 
 def _voltar_copia(caminho: Path, diz: Diz) -> None:
+    if not diario.caminho_limpo(str(caminho)):
+        diz(f"  atencao: caminho estranho no diario, ignorado: {caminho}")
+        return
     if not _da_pessoa(caminho):
         _voltar_copia_do_sistema(caminho, diz)
         return
@@ -182,15 +225,29 @@ def _voltar_copia(caminho: Path, diz: Diz) -> None:
 def _voltar_copia_do_sistema(caminho: Path, diz: Diz) -> None:
     """Arquivo do sistema volta so da copia do root (caminhos.BACKUP_SISTEMA):
     a da pasta da pessoa poderia ter sido trocada por qualquer programa dela."""
+    if str(caminho) not in RESTAURAVEIS_FORA_DE_CASA:
+        diz(f"  atencao: {caminho} nao e devolvido pelo root (fora da lista); confira a mao")
+        return
+    if _dividido_em_uso(caminho, diz):
+        return
     copia = caminhos.BACKUP_SISTEMA / str(caminho).lstrip("/")
     if _rodar(["sudo", "-n", "test", "-e", str(copia)], diz) != 0:
         diz(f"  atencao: sem copia de seguranca (do root) de {caminho}; fica como esta")
         return
-    _rodar(["sudo", "-n", "rm", "-rf", str(caminho)], diz)
-    if _rodar(["sudo", "-n", "cp", "-a", str(copia), str(caminho)], diz) != 0:
+    if _rodar(["sudo", "-n", "sh", "-c", DEVOLVER_ROOT, "sh", str(caminhos.BACKUP_SISTEMA),
+               str(copia), str(caminho)], diz) != 0:
         diz(f"  nao consegui devolver {caminho}")
         return
     diz(f"  devolvido {caminho}")
+
+
+# a pasta das copias e do root e nao e link; a copia, resolvida (realpath -e),
+# fica dentro dela; so entao o destino e trocado pela copia
+DEVOLVER_ROOT = (
+    '[ -d "$1" ] && [ ! -L "$1" ] && [ "$(stat -c %u "$1")" = 0 ] || exit 3; '
+    'raiz=$(realpath -e -- "$1") && c=$(realpath -e -- "$2") || exit 3; '
+    'case "$c" in "$raiz"/*) ;; *) exit 4;; esac; '
+    'rm -rf -- "$3" && cp -a -- "$c" "$3"')
 
 
 def tirar_bloco(arquivo: Path, marca: str, comentario: str) -> bool:
@@ -259,7 +316,11 @@ def _diario(diz: Diz) -> int:
     for item in reversed(itens):
         try:
             tipo = item.get("tipo")
-            if tipo == "criado" and caminhos.DADOS_DIR in Path(item["caminho"]).parents:
+            if "caminho" in item and not diario.caminho_limpo(item["caminho"]):
+                diz(f"  atencao: caminho estranho no diario, ignorado: {item['caminho']}")
+                continue
+            if tipo == "criado" and any(d in Path(item["caminho"]).parents
+                                        for d in (caminhos.DADOS_DIR, caminhos.DADOS_DIR_ANTIGO)):
                 guardados += 1
             elif tipo == "criado":
                 _apagar(Path(item["caminho"]), diz)
@@ -385,6 +446,10 @@ def previa_remocao() -> dict:
                 mudou = True
     pastas = [str(p) for p in (caminhos.CONFIG_DIR, caminhos.DADOS_DIR, caminhos.ESTADO_DIR,
                                caminhos.BACKUP_SISTEMA) if p.exists()]
+    # a pasta de dados de versoes anteriores era a mesma do bigsur-xfce: so sai
+    # se ele nao estiver aplicado
+    if caminhos.DADOS_DIR_ANTIGO.is_dir() and _ha_diario_antigo(itens) and not _bigsur_em_uso():
+        pastas.append(str(caminhos.DADOS_DIR_ANTIGO))
     # so o que o diario anotou ao criar e a lista acima permite sai; o resto
     # aparece para conferir a mao (pode ter existido antes do projeto)
     conferir = sorted({e["caminho"] for e in itens if e.get("tipo") == "criado" and e.get("caminho")
@@ -398,6 +463,11 @@ def previa_remocao() -> dict:
     return {"pacotes": pacotes, "ficam": ficam, "pastas_do_projeto": pastas, "origem": origem,
             "mudancas": len(itens), "dependencias": dependencias, "conferir": conferir,
             "fontes_externas": fontes}
+
+
+def _ha_diario_antigo(itens: list[dict]) -> bool:
+    """O diario tem algo criado na pasta de dados antiga (instalacao anterior)."""
+    return any(caminhos.DADOS_DIR_ANTIGO in Path(e.get("caminho", "/")).parents for e in itens)
 
 
 def _orfas() -> set[str]:

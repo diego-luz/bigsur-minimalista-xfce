@@ -21,6 +21,15 @@ d3_pasta "$HOME/.local/share/icons"
 d3_antes "$HOME/.local/share/icons/WhiteSur" "$HOME/.local/share/icons/WhiteSur-dark" \
          "$HOME/.local/share/icons/WhiteSur-light"
 bash ./install.sh -t default -a -b
+echo "icones gerados"
+'''
+
+# o instalador (codigo de terceiros) roda no trecho de cima, sem sudo; este so
+# copia o resultado para o sistema
+[[passo]]
+tipo = "script"
+dizer = "copiando os icones para /usr/share/icons"
+corpo = '''
 # o WhiteSur busca no breeze o que nao tem, mas o breeze nao vem no XFCE e
 # o icone some; o Adwaita e dependencia do GTK e esta sempre instalado
 for t in "$HOME/.local/share/icons/WhiteSur" \
@@ -34,8 +43,8 @@ for t in "$HOME/.local/share/icons/WhiteSur" \
          "$HOME/.local/share/icons/WhiteSur-light"; do
   [ -d "$t" ] || continue
   d3_antes "/usr/share/icons/$(basename "$t")"
-  sudo -n rm -rf "/usr/share/icons/$(basename "$t")" 2>/dev/null || true
-  sudo -n cp -a "$t" /usr/share/icons/ 2>/dev/null || true
+  # root:root e sem escrita para outros, passando por uma pasta nova do root
+  d3_raiz_instalar "$t" "/usr/share/icons/$(basename "$t")" || true
 done
 gtk-update-icon-cache -f "$HOME/.local/share/icons/WhiteSur" >/dev/null 2>&1 || true
 echo "icones instalados"

@@ -26,8 +26,8 @@ d3_antes "$HOME/.local/share/icons/WhiteSur-cursors" /usr/share/icons/WhiteSur-c
 rm -rf "$HOME/.local/share/icons/WhiteSur-cursors"
 mkdir -p "$HOME/.local/share/icons"
 cp -a "$origem" "$HOME/.local/share/icons/WhiteSur-cursors"
-sudo -n rm -rf /usr/share/icons/WhiteSur-cursors 2>/dev/null || true
-sudo -n cp -a "$origem" /usr/share/icons/WhiteSur-cursors 2>/dev/null || true
+# root:root e sem escrita para outros, passando por uma pasta nova do root
+d3_raiz_instalar "$origem" /usr/share/icons/WhiteSur-cursors || true
 echo "cursores instalados"
 '''
 

@@ -8,6 +8,8 @@ quando o usuario muda uma opcao, sem nenhuma tabela em codigo.
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -120,13 +122,19 @@ def executar(apenas: list[str] | None = None, pular: list[str] | None = None,
     diz = saida or print
     try:
         with caminhos.trava():
-            return _executar(apenas, pular, refazer, simular, diz, cfg)
+            # pasta de montagem da tela de login so desta execucao: nova, com
+            # nome imprevisivel e 0700 (mkdtemp), apagada no fim
+            montagem = tempfile.mkdtemp(prefix="d3bian-init-minimalista-login-")
+            try:
+                return _executar(apenas, pular, refazer, simular, diz, cfg, montagem)
+            finally:
+                shutil.rmtree(montagem, ignore_errors=True)
     except caminhos.Ocupado as erro:
         diz(f"{erro}; espere terminar")
         return 1
 
 
-def _executar(apenas, pular, refazer, simular, diz, cfg) -> int:
+def _executar(apenas, pular, refazer, simular, diz, cfg, montagem: str = "") -> int:
     caminhos.preparar()
     cfg = cfg or config.ler()
     ctx = motor.montar_contexto(cfg)
@@ -151,6 +159,7 @@ def _executar(apenas, pular, refazer, simular, diz, cfg) -> int:
         # o contexto e refeito a cada receita: o papel de parede e o fundo do login
         # so existem depois que a receita de papeis baixou as imagens
         ctx = motor.montar_contexto(cfg)
+        ctx["login_dir"] = montagem
         maquina = motor.Motor(ctx, saida=diz, simular=simular, receita=receita.ident)
         try:
             maquina.rodar(receita.passos)

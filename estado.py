@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as _dt
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -41,7 +42,7 @@ def quando(ident: str) -> str:
 def marcar(ident: str) -> None:
     caminhos.preparar()
     try:
-        marca(ident).write_text(_agora() + "\n")
+        caminhos.escrever(marca(ident), _agora() + "\n")
     except OSError:
         pass
 
@@ -86,10 +87,19 @@ def _copia_do_sistema(alvo: Path) -> bool:
     """Arquivo do sistema: a copia fica em caminhos.BACKUP_SISTEMA, do root e
     fechada (0700), e e de la que o desfazer devolve."""
     raiz = str(caminhos.BACKUP_SISTEMA)
-    destino = str(caminhos.BACKUP_SISTEMA / str(alvo).lstrip("/"))
-    # so a primeira versao, como na pasta da pessoa
+    bruto = str(alvo)
+    # caminho com ".." sairia da pasta das copias
+    if not bruto.startswith("/") or os.path.normpath(bruto) != bruto:
+        registrar(f"copia (root) recusada, caminho estranho: {bruto}")
+        return False
+    destino = str(caminhos.BACKUP_SISTEMA / bruto.lstrip("/"))
+    # so a primeira versao, como na pasta da pessoa; a pasta das copias tem de
+    # ser do root e nao um link, e o destino resolvido fica dentro dela
     trecho = ('[ -e "$2" ] || [ -L "$2" ] && exit 0; '
-              'install -d -m 0700 -o root -g root "$1" && mkdir -p "$(dirname "$2")" '
+              '[ -L "$1" ] && exit 1; '
+              'install -d -m 0700 -o root -g root "$1" && [ "$(stat -c %u "$1")" = 0 ] '
+              '&& mkdir -p "$(dirname "$2")" '
+              '&& case "$(realpath -m -- "$2")" in "$1"/*) ;; *) exit 1;; esac '
               '&& cp -a "$3" "$2"')
     try:
         ok = subprocess.run(["sudo", "-n", "sh", "-c", trecho, "sh", raiz, destino, str(alvo)],

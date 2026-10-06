@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import hmac
 import html
-import http.cookies
 import json
+import os
 import secrets
 import signal
 import subprocess
@@ -52,6 +52,36 @@ def link_de_entrada(porta: int) -> str:
     return f"http://127.0.0.1:{porta}/entrar?k={_entrada['codigo']}"
 
 
+def _arquivo_de_entrada(porta: int) -> Path:
+    """O link vai num arquivo so da pessoa, nao na linha de comando: a lista de
+    processos (/proc/*/cmdline) e visivel para as outras contas da maquina."""
+    base = os.environ.get("XDG_RUNTIME_DIR") or str(caminhos.ESTADO_DIR)
+    alvo = Path(base) / f"{NOME}-entrar.html"
+    link = html.escape(link_de_entrada(porta))
+    caminhos.escrever(alvo, f"<!doctype html><meta charset=utf-8>"
+                            f"<meta http-equiv=refresh content='0;url={link}'>"
+                            f"<a href='{link}'>abrir o painel</a>\n", 0o600)
+    return alvo
+
+
+def _uid_da_conexao(porta_cliente: int, porta_servidor: int) -> int | None:
+    """Dono da conexao, pela tabela do kernel; None se nao der para saber."""
+    try:
+        linhas = Path("/proc/net/tcp").read_text().splitlines()[1:]
+    except OSError:
+        return None
+    for linha in linhas:
+        campos = linha.split()
+        try:
+            local, remoto, uid = campos[1], campos[2], int(campos[7])
+        except (IndexError, ValueError):
+            continue
+        if (int(local.split(":")[1], 16) == porta_cliente
+                and int(remoto.split(":")[1], 16) == porta_servidor):
+            return uid
+    return -1  # conexao que nao aparece: recusa
+
+
 def _nome_cookie(porta: int) -> str:
     # cookies nao separam portas: cada painel usa o seu nome
     return f"painel_{porta}"
@@ -81,13 +111,19 @@ class Painel(BaseHTTPRequestHandler):
         return self.headers.get("Host", "") in (f"127.0.0.1:{porta}", f"localhost:{porta}")
 
     def _sessao_ok(self) -> bool:
-        cookie = http.cookies.SimpleCookie()
-        try:
-            cookie.load(self.headers.get("Cookie", ""))
-        except http.cookies.CookieError:
-            return False
-        valor = cookie.get(_nome_cookie(self._porta()))
-        return bool(valor) and hmac.compare_digest(valor.value, CHAVE)
+        # le o cabecalho a mao: um cookie malformado de outro programa em
+        # 127.0.0.1 (cookies nao separam portas) nao pode travar o painel
+        nome = _nome_cookie(self._porta()) + "="
+        for parte in self.headers.get("Cookie", "").split(";"):
+            parte = parte.strip()
+            if parte.startswith(nome) and hmac.compare_digest(parte[len(nome):], CHAVE):
+                return True
+        return False
+
+    def _mesmo_usuario(self) -> bool:
+        """So a conta que abriu o painel fala com ele: outra conta da maquina
+        tambem alcanca 127.0.0.1, entao a conexao e conferida pelo dono."""
+        return _uid_da_conexao(self.client_address[1], self._porta()) in (os.getuid(), None)
 
     def _post_ok(self) -> bool:
         porta = self._porta()
@@ -111,6 +147,7 @@ class Painel(BaseHTTPRequestHandler):
                 # uso unico: o link pode ter ficado no historico ou na lista de
                 # processos; o terminal mostra um novo para outra janela
                 _entrada["codigo"] = secrets.token_urlsafe(32)
+                print(f"  uma janela entrou no painel ({time.strftime('%H:%M:%S')})")
                 print(f"  para abrir em outra janela: {link_de_entrada(porta)}")
         if not valido:
             self._envia(403, ACESSO_HTML, "text/html; charset=utf-8")
@@ -160,6 +197,9 @@ class Painel(BaseHTTPRequestHandler):
 
     # ---- GET -------------------------------------------------------------
     def do_GET(self) -> None:
+        if not self._mesmo_usuario():
+            self._envia(403, b"outra conta", "text/plain; charset=utf-8")
+            return
         if not self._host_ok():
             self._envia(403, b"host nao permitido", "text/plain; charset=utf-8")
             return
@@ -171,6 +211,11 @@ class Painel(BaseHTTPRequestHandler):
             rota = "/index.html"
         if rota.startswith("/api/") and not self._sessao_ok():
             self._negado()
+            return
+        # previas e papeis sao fotos desta maquina (e a miniatura roda o
+        # ImageMagick): so com a sessao. Livres ficam css, js e os logos do pacote
+        if rota.startswith(("/capturas/", "/papeis/")) and not self._sessao_ok():
+            self._envia(403, b"abra o painel pelo link do terminal", "text/plain; charset=utf-8")
             return
         if rota.endswith(".html") and not self._sessao_ok():
             # a pagina sem a sessao nao serviria para nada: explica o que fazer
@@ -250,6 +295,10 @@ class Painel(BaseHTTPRequestHandler):
             return
 
         alvo = (caminhos.WEB / rota.lstrip("/")).resolve()
+        # "/index.html/" resolve para a pagina: a regra vale pelo arquivo, nao pelo texto
+        if alvo.suffix == ".html" and not self._sessao_ok():
+            self._envia(403, ACESSO_HTML, "text/html; charset=utf-8")
+            return
         if not alvo.is_relative_to(caminhos.WEB.resolve()):
             self._envia(404, b"nao encontrado", "text/plain; charset=utf-8")
             return
@@ -259,7 +308,7 @@ class Painel(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         # toda rota POST passa por aqui: acao so com a sessao, em JSON e da
         # propria pagina
-        if not (self._host_ok() and self._post_ok()):
+        if not (self._mesmo_usuario() and self._host_ok() and self._post_ok()):
             self._negado()
             return
         rota = self.path.split("?")[0]
@@ -335,6 +384,10 @@ class Painel(BaseHTTPRequestHandler):
             self.json({"iniciado": False, "motivo": "nada a fazer"})
             return
 
+        if not caminhos.livre():
+            self.json({"iniciado": False, "motivo": "ocupado",
+                       "detalhe": "a linha de comando esta rodando"}, 409)
+            return
         novidade = bool(mudou or pendentes)
         rotulo = ("Aplicando" if novidade else "Reaplicando") + ": " + ", ".join(alvos)
         iniciado = tarefa.funcao(
@@ -358,7 +411,7 @@ class Painel(BaseHTTPRequestHandler):
             return
         try:
             instalada = "lightdm-gtk-greeter" in Path(
-                "/etc/lightdm/lightdm.conf.d/90-d3bian.conf").read_text()
+                "/etc/lightdm/lightdm.conf.d/91-d3bian-minimalista.conf").read_text()
         except OSError:
             instalada = False
         if not instalada:
@@ -385,6 +438,10 @@ class Painel(BaseHTTPRequestHandler):
                        "impedimentos": impedem}, 412)
             return
         pedido = config.filtrar(corpo)
+        if not caminhos.livre():
+            self.json({"iniciado": False, "motivo": "ocupado",
+                       "detalhe": "a linha de comando esta rodando"}, 409)
+            return
         iniciado = tarefa.funcao(
             "Instalacao completa, pode levar de 15 a 25 minutos",
             lambda diz: receitas.executar(saida=diz, cfg={**config.ler(), **pedido}),
@@ -410,6 +467,10 @@ class Painel(BaseHTTPRequestHandler):
                        "externas": externas})
             return
 
+        if not caminhos.livre():
+            self.json({"iniciado": False, "motivo": "ocupado",
+                       "detalhe": "a linha de comando esta rodando"}, 409)
+            return
         if remover:
             extras = programas.arrastaria(escolhidos)
             if extras and not corpo.get("confirmar"):
@@ -455,7 +516,7 @@ def subir(porta: int = PORTA_PADRAO, abrir: bool = True) -> int:
     print("  (o link vale uma vez; feche pelo botao na pagina, ou com Ctrl+C aqui)\n")
     if abrir:
         try:
-            subprocess.Popen(["xdg-open", endereco],
+            subprocess.Popen(["xdg-open", _arquivo_de_entrada(porta).as_uri()],
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except OSError:
             print("  abra o endereco acima no seu navegador")

@@ -6,36 +6,46 @@ requer = ["30"]
 afetada_por = ["destaque", "papel_de_parede",
                "login_fundo", "login_desfoque", "login_usuarios"]
 
-# Os arquivos sao montados primeiro em @@login_dir@@, que e do usuario, e so
-# depois levados para o sistema. A previa roda estes mesmos passos com
-# login_instalar = nao e outra pasta, entao o que ela mostra e exatamente o
-# que seria instalado.
+# Os arquivos sao montados primeiro em @@login_dir@@, uma pasta nova e fechada
+# (0700) que receitas.py cria a cada execucao e apaga no fim, e so depois
+# levados para o sistema, passando por uma pasta nova do root. A previa roda
+# estes mesmos passos com login_instalar = nao e outra pasta, entao o que ela
+# mostra e exatamente o que seria instalado.
 
 [[passo]]
 tipo = "apt"
 se = "login_instalar == sim"
 pacotes = ["lightdm-gtk-greeter"]
 
-# comeca de pasta vazia: sobra de uma execucao interrompida iria parar nas
-# copias de seguranca
+# a pasta de montagem tem de ser a da execucao: nova, da pessoa, fechada e
+# nao um link. Comeca vazia (a pasta fica; um nome livre em /tmp poderia ser
+# tomado por outra conta)
 [[passo]]
-tipo = "comando"
-argumentos = ["rm", "-rf", "@@login_dir@@"]
+tipo = "script"
+corpo = '''
+d="${D3_LOGIN_DIR:-}"
+if [ -z "$d" ] || [ -L "$d" ] || [ ! -d "$d" ] || [ ! -O "$d" ] \
+   || [ "$(stat -c %a "$d")" != 700 ]; then
+  echo "pasta de montagem do login invalida: ${d:-vazia}" >&2
+  exit 1
+fi
+find "$d" -mindepth 1 -delete
+'''
 
 [[passo]]
 tipo = "arquivo"
 dizer = "montando o tema da tela de login"
-destino = "@@login_dir@@/share/themes/d3bian-login/gtk-3.0/gtk.css"
+destino = "@@login_dir@@/share/themes/d3bian-login-minimalista/gtk-3.0/gtk.css"
 modelo = "login-gtk.css"
 
 [[passo]]
 tipo = "arquivo"
-destino = "@@login_dir@@/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf"
+destino = "@@login_dir@@/xdg/lightdm/lightdm-gtk-greeter.conf.d/91-d3bian-minimalista.conf"
 modelo = "login-greeter.conf"
 
 [[passo]]
 tipo = "arquivo"
-destino = "@@login_dir@@/lightdm.conf.d/90-d3bian.conf"
+destino = "@@login_dir@@/lightdm.conf.d/91-d3bian-minimalista.conf"
 conteudo = '''
 # Escrito pelo d3bian-init-bigsur-minimalista-xfce.
 [Seat:*]
@@ -51,7 +61,6 @@ tipo = "script"
 dizer = "preparando o fundo e a foto"
 corpo = '''
 d="$D3_LOGIN_DIR"
-mkdir -p "$d"
 rm -f "$d/fundo.jpg" "$d/avatar.png"
 
 origem="$D3_LOGIN_FUNDO_ARQUIVO"
@@ -87,7 +96,7 @@ echo "foto: $(basename "$avatar")"
 [[passo]]
 tipo = "backup"
 se = "login_instalar == sim"
-caminhos = ["/etc/lightdm/lightdm.conf.d/90-d3bian.conf"]
+caminhos = ["/etc/lightdm/lightdm.conf.d/91-d3bian-minimalista.conf"]
 
 [[passo]]
 tipo = "script"
@@ -95,18 +104,34 @@ se = "login_instalar == sim"
 dizer = "levando para o sistema"
 corpo = '''
 d="$D3_LOGIN_DIR"
-tema=/usr/share/themes/d3bian-login
+tema=/usr/share/themes/d3bian-login-minimalista
 # anotado antes de levar para o sistema; o desfazer apaga ou devolve cada um
-d3_antes "$D3_LOGIN_RAIZ" "$tema" /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf \
-         /etc/lightdm/lightdm.conf.d/90-d3bian.conf
+d3_antes "$D3_LOGIN_RAIZ" "$tema" /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/91-d3bian-minimalista.conf \
+         /etc/lightdm/lightdm.conf.d/91-d3bian-minimalista.conf
+# o root copia tudo primeiro para uma pasta nova dele, recusando link
+# simbolico, e instala de la: o que esta na pasta da pessoa nao chega ao
+# sistema por um atalho, nem trocado depois de conferido
+r="$(sudo -n mktemp -d)"
+trap 'sudo -n rm -rf -- "$r"' EXIT
+leva() {  # arquivo da montagem -> nome na pasta do root
+  if [ -L "$d/$1" ] || [ ! -f "$d/$1" ]; then echo "recusado: $d/$1" >&2; exit 1; fi
+  sudo -n cp -P --no-preserve=all -- "$d/$1" "$r/$2"
+  sudo -n test -f "$r/$2" -a ! -L "$r/$2" || { echo "recusado: $d/$1" >&2; exit 1; }
+}
+leva fundo.jpg fundo.jpg
+leva avatar.png avatar.png
+leva share/themes/d3bian-login-minimalista/gtk-3.0/gtk.css gtk.css
+leva xdg/lightdm/lightdm-gtk-greeter.conf.d/91-d3bian-minimalista.conf greeter.conf
+leva lightdm.conf.d/91-d3bian-minimalista.conf lightdm.conf
 sudo -n install -d -m 755 "$D3_LOGIN_RAIZ" "$tema/gtk-3.0" \
      /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d /etc/lightdm/lightdm.conf.d
-sudo -n install -m 644 "$d/fundo.jpg" "$d/avatar.png" "$D3_LOGIN_RAIZ/"
-sudo -n install -m 644 "$d/share/themes/d3bian-login/gtk-3.0/gtk.css" "$tema/gtk-3.0/gtk.css"
-sudo -n install -m 644 "$d/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf" \
-     /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/
-sudo -n install -m 644 "$d/lightdm.conf.d/90-d3bian.conf" /etc/lightdm/lightdm.conf.d/
-rm -rf "$d"
+sudo -n install -o root -g root -m 644 "$r/fundo.jpg" "$r/avatar.png" "$D3_LOGIN_RAIZ/"
+sudo -n install -o root -g root -m 644 -T "$r/gtk.css" "$tema/gtk-3.0/gtk.css"
+sudo -n install -o root -g root -m 644 -T "$r/greeter.conf" \
+     /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/91-d3bian-minimalista.conf
+sudo -n install -o root -g root -m 644 -T "$r/lightdm.conf" /etc/lightdm/lightdm.conf.d/91-d3bian-minimalista.conf
+sudo -n rm -rf -- "$r"
+trap - EXIT
 
 # Nao confunda "nao consegui verificar" com "deu errado": o lightdm --show-config
 # exige root, e o greeter em uso so muda quando o LightDM reinicia, porque ele
@@ -121,5 +146,5 @@ else
 fi
 echo "a tela de bloqueio muda na hora; a de login, no proximo reinicio"
 echo "se o login falhar, va ao modo texto com Ctrl+Alt+F2 e rode:"
-echo "  sudo rm /etc/lightdm/lightdm.conf.d/90-d3bian.conf && sudo systemctl restart lightdm"
+echo "  sudo rm /etc/lightdm/lightdm.conf.d/91-d3bian-minimalista.conf && sudo systemctl restart lightdm"
 '''

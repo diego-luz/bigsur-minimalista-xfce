@@ -27,7 +27,10 @@ def _xdg(variavel: str, padrao: str) -> Path:
 
 CONFIG_DIR = _xdg("XDG_CONFIG_HOME", ".config") / "d3bian-init-bigsur-minimalista"
 ESTADO_DIR = _xdg("XDG_STATE_HOME", ".local/state") / "d3bian-init-bigsur-minimalista"
-DADOS_DIR = _xdg("XDG_DATA_HOME", ".local/share") / "d3bian-init"
+DADOS_DIR = _xdg("XDG_DATA_HOME", ".local/share") / "d3bian-init-bigsur-minimalista"
+# versoes anteriores dividiam a pasta de dados com o d3bian-init-bigsur-xfce;
+# so o desfazer de uma instalacao antiga ainda olha para ela
+DADOS_DIR_ANTIGO = _xdg("XDG_DATA_HOME", ".local/share") / "d3bian-init"
 
 CONFIG = CONFIG_DIR / "config.json"
 REGISTRO = ESTADO_DIR / "registro.log"
@@ -74,14 +77,37 @@ def proteger_codigo() -> None:
 
 def escrever(destino: Path, texto: str, modo: int | None = None) -> None:
     """Grava inteiro ou nada: um corte no meio (queda de energia, Ctrl+C) nao
-    deixa o arquivo pela metade. Mantem a permissao do arquivo que existia."""
+    deixa o arquivo pela metade. Mantem a permissao do arquivo que existia.
+
+    Link simbolico (um arquivo que aponta para um repositorio de dotfiles) e
+    seguido: grava no arquivo de verdade e o link continua link. Arquivo com
+    mais de um nome (link fisico) ou de outro dono e regravado no lugar, para
+    nao separar os nomes nem trocar o dono."""
     import tempfile
+    destino = Path(destino)
+    if destino.is_symlink():
+        destino = Path(os.path.realpath(destino))
     destino.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        info = destino.stat()
+    except OSError:
+        info = None
+    if info is not None and (info.st_nlink > 1 or info.st_uid != os.getuid()):
+        with open(destino, "r+") as arquivo:
+            arquivo.write(texto)
+            arquivo.truncate()
+            arquivo.flush()
+            os.fsync(arquivo.fileno())
+        if modo is not None:
+            os.chmod(destino, modo)
+        return
     if modo is None:
-        try:
-            modo = destino.stat().st_mode & 0o7777
-        except OSError:
-            modo = 0o644
+        if info is not None:
+            modo = info.st_mode & 0o7777
+        else:
+            mascara = os.umask(0)
+            os.umask(mascara)
+            modo = 0o666 & ~mascara
     fd, temp = tempfile.mkstemp(dir=destino.parent, prefix=f".{destino.name}.")
     try:
         with os.fdopen(fd, "w") as arquivo:
@@ -97,6 +123,16 @@ def escrever(destino: Path, texto: str, modo: int | None = None) -> None:
 
 class Ocupado(RuntimeError):
     """Outra execucao (o painel ou a linha de comando) ja esta mexendo."""
+
+
+def livre() -> bool:
+    """A trava esta livre agora? (para nao gravar opcoes de uma execucao que
+    seria recusada porque a linha de comando ja esta rodando)"""
+    try:
+        with trava():
+            return True
+    except Ocupado:
+        return False
 
 
 class trava:

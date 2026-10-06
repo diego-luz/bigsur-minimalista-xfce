@@ -54,10 +54,25 @@ def ler() -> list[dict]:
     itens = []
     for linha in linhas:
         try:
-            itens.append(json.loads(linha))
+            item = json.loads(linha)
         except json.JSONDecodeError:
             continue
+        if not isinstance(item, dict):
+            continue
+        # o diario fica numa pasta do usuario: caminho relativo ou com ".."
+        # (/usr/share/themes/../../etc) nao chega ao desfazer
+        if "caminho" in item and not caminho_limpo(item["caminho"]):
+            continue
+        if "criados" in item:
+            item["criados"] = [c for c in item.get("criados") or [] if caminho_limpo(c)]
+        itens.append(item)
     return itens
+
+
+def caminho_limpo(bruto) -> bool:
+    """Absoluto e ja normalizado (sem "..", "." ou barras repetidas)."""
+    return (isinstance(bruto, str) and bruto.startswith("/")
+            and os.path.normpath(bruto) == bruto)
 
 
 def existe() -> bool:
@@ -162,6 +177,20 @@ def main(argumentos: list[str]) -> int:
     return 0
 
 
+# roda como root numa copia que e do root: link que aponta para fora da propria
+# arvore (absoluto, ou com .. demais) sai, para nao levar ao sistema um atalho
+# para a pasta da pessoa
+LINKS_PY = """import os, sys
+raiz = os.path.realpath(sys.argv[1])
+for pasta, dirs, arqs in os.walk(raiz):
+    for nome in dirs + arqs:
+        caminho = os.path.join(pasta, nome)
+        if os.path.islink(caminho):
+            alvo = os.path.realpath(caminho)
+            if alvo != raiz and not alvo.startswith(raiz + os.sep):
+                os.unlink(caminho)
+"""
+
 # posto no comeco de todo script de receita pelo motor
 FUNCOES_SHELL = r'''
 _d3_diario() { PYTHONPATH="$D3_DIARIO_PAI${PYTHONPATH:+:$PYTHONPATH}" "$D3_DIARIO_PYTHON" -m "$D3_DIARIO_PACOTE.diario" "$@" || true; }
@@ -193,6 +222,32 @@ d3_depois_de() {
   return 0
 }
 d3_pacotes() { _d3_diario pacotes "$@"; }
+# ORIGEM (arquivo ou pasta da pessoa) vai para DESTINO no sistema como root:root,
+# sem escrita para grupo e outros, e opcionalmente com MODO (arquivo). O root
+# copia antes para uma pasta nova dele (sudo mktemp -d) e instala de la: link
+# simbolico na raiz da origem e recusado, e o que aponta para fora da arvore sai.
+# Trecho que chama isto conta como trecho com sudo (motor.py): nada de codigo
+# de terceiros nele.
+d3_raiz_instalar() {
+  local origem=$1 destino=$2 modo=${3:-} r
+  if [ -L "$origem" ] || [ ! -e "$origem" ]; then
+    echo "recusado (link simbolico ou ausente): $origem" >&2; return 1
+  fi
+  r="$(sudo -n mktemp -d)" || return 1
+  if ! sudo -n cp -R -P --no-preserve=all -- "$origem" "$r/c" || sudo -n test -L "$r/c"; then
+    sudo -n rm -rf -- "$r"; echo "recusado: $origem" >&2; return 1
+  fi
+  sudo -n python3 -I -c "$D3_LINKS_PY" "$r/c"
+  sudo -n chown -R root:root "$r/c"
+  sudo -n chmod -R u+rwX,go+rX,go-w "$r/c"
+  if [ -n "$modo" ]; then sudo -n chmod "$modo" "$r/c"; fi
+  sudo -n install -d -m 755 -- "$(dirname "$destino")"
+  sudo -n rm -rf -- "$destino"
+  if ! sudo -n mv -T -- "$r/c" "$destino"; then
+    sudo -n rm -rf -- "$r"; return 1
+  fi
+  sudo -n rm -rf -- "$r"
+}
 '''
 
 
@@ -203,6 +258,7 @@ def ambiente_shell(receita: str, anotar_ligado: bool) -> dict[str, str]:
         "D3_DIARIO_PACOTE": caminhos.PACOTE.name,
         "D3_DIARIO_PYTHON": sys.executable or "python3",
         "D3_RECEITA": receita,
+        "D3_LINKS_PY": LINKS_PY,
         **({} if anotar_ligado else {"D3_SEM_DIARIO": "1"}),
     }
 

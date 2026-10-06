@@ -27,6 +27,9 @@ def garantir_sudo(obrigatorio: bool = False) -> bool:
     credencial que foi autorizada aqui.
     """
     if sistema.sudo_liberado():
+        # ja autorizado (cache do sudo): mantem vivo do mesmo jeito, senao
+        # ele vence no meio da sessao do painel
+        _manter_sudo()
         return True
     if not sys.stdin.isatty():
         if obrigatorio:
@@ -40,13 +43,25 @@ def garantir_sudo(obrigatorio: bool = False) -> bool:
     except OSError:
         return False
 
+    _manter_sudo()
+    return True
+
+
+_mantendo = threading.Event()
+
+
+def _manter_sudo() -> None:
+    """Renova a credencial a cada 50 s enquanto o programa roda (uma vez so)."""
+    if _mantendo.is_set():
+        return
+    _mantendo.set()
+
     def manter() -> None:
         while True:
             time.sleep(50)
             subprocess.run(["sudo", "-n", "true"], capture_output=True)
 
     threading.Thread(target=manter, daemon=True).start()
-    return True
 
 
 # --------------------------------------------------------------------------

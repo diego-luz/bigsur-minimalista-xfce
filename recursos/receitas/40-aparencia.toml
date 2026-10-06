@@ -3,7 +3,7 @@ id = "40"
 nome = "aparencia"
 titulo = "Tema, fontes, botoes e papel de parede"
 requer = ["30", "31"]
-afetada_por = ["tema", "destaque", "fonte_interface", "papel_de_parede"]
+afetada_por = ["tema", "destaque", "papel_de_parede"]
 
 [[passo]]
 tipo = "xfconf"

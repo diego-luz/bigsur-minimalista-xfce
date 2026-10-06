@@ -44,7 +44,7 @@ O completo é o [bigsur-xfce](https://git.saberdl.dev.br/d3bian/bigsur-xfce).
 ## Opções
 
 `tema` (claro/escuro), `destaque`, `logo` do canto, `janelas` (encaixe),
-`papel_de_parede`, `fonte_interface`, `login_fundo`, `login_desfoque`,
+`papel_de_parede`, `login_fundo`, `login_desfoque`,
 `login_usuarios` e `bloqueio` de tela.
 
 ## O que fica onde

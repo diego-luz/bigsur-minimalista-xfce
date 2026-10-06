@@ -2,7 +2,7 @@
 id = "42"
 nome = "terminal"
 titulo = "Cores e transparencia do terminal"
-afetada_por = ["fonte_interface"]
+afetada_por = []
 
 # O xfce4-terminal 1.x guarda tudo no xfconf; o terminalrc so e lido uma vez,
 # para migrar, e o que ele traz nao voltaria ao desfazer. Cada propriedade vai

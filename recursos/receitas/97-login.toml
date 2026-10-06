@@ -3,7 +3,7 @@ id = "97"
 nome = "login"
 titulo = "Tela de login e de bloqueio"
 requer = ["30"]
-afetada_por = ["destaque", "fonte_interface", "papel_de_parede",
+afetada_por = ["destaque", "papel_de_parede",
                "login_fundo", "login_desfoque", "login_usuarios"]
 
 # Os arquivos sao montados primeiro em @@login_dir@@, que e do usuario, e so

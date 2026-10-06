@@ -99,8 +99,7 @@ Todos com o mesmo motor e o mesmo jeito de usar: um painel local, só Python da 
 - A mesma pegada do [Xfce minimalista](https://plus.diolinux.com.br/t/void-xfce-minimalista/74056)
   publicado no Diolinux Plus.
 - Fontes [Inter](https://rsms.me/inter/), [Fira Code](https://github.com/tonsky/FiraCode) e
-  Noto Color Emoji, do repositório do Debian (SIL OFL). A SF Pro, opcional, é baixada de um
-  [espelho público](https://github.com/sahibjotsaggu/San-Francisco-Pro-Fonts) e segue a licença da Apple.
+  Noto Color Emoji, do repositório do Debian (SIL OFL).
 - Xfce, LightDM e os demais pacotes vêm do repositório oficial do Debian.
 - Não tem relação com a Apple. macOS e Big Sur são marcas da Apple Inc.; Debian é marca
   da Software in the Public Interest.

@@ -46,7 +46,7 @@ body{{font:13px/1.4 "DejaVu Sans",system-ui,sans-serif}}
 .area{{position:absolute;inset:0;background:linear-gradient(160deg,{papel_a},{papel_b})}}
 .barra{{position:absolute;left:0;right:0;top:0;height:30px;display:flex;align-items:center;
   gap:12px;padding:0 14px;background:{barra};color:{barra_texto};font-size:12.5px}}
-.barra .maca{{width:13px;height:13px;border-radius:50%;background:{barra_texto};opacity:.9}}
+.barra .menu{{width:13px;height:13px;border-radius:50%;background:{barra_texto};opacity:.9}}
 .barra .esp{{flex:1}}
 .barra .dir{{display:flex;gap:11px;align-items:center;opacity:.9}}
 .barra .dir i{{width:11px;height:11px;border-radius:3px;background:{barra_texto};opacity:.5}}
@@ -72,7 +72,7 @@ body{{font:13px/1.4 "DejaVu Sans",system-ui,sans-serif}}
 </style>
 <div class="area">
   <div class="barra">
-    <span class="maca"></span>
+    <span class="menu"></span>
     <div class="esp"></div>
     <div class="dir"><i></i><i></i><i></i><span>{hora}</span></div>
   </div>

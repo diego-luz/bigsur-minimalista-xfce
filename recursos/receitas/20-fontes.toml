@@ -3,30 +3,7 @@ id = "20"
 nome = "fontes"
 titulo = "Fontes de interface e monospace"
 requer = ["10"]
-afetada_por = ["fonte_interface"]
-
-[[passo]]
-tipo = "script"
-se = "fonte_interface == sf-pro"
-dizer = "baixando a SF Pro de um espelho publico"
-tolera_falha = true
-corpo = '''
-destino="$HOME/.local/share/fonts"
-d3_pasta "$destino"
-mkdir -p "$destino"
-origem="$D3_FONTES/sf-pro"
-if [ ! -d "$origem/.git" ]; then
-  git clone --depth 1 https://github.com/sahibjotsaggu/San-Francisco-Pro-Fonts.git "$origem"
-fi
-# cada fonte nova e anotada antes de copiar; as que ja existiam ficam como estao
-find "$origem" -type f \( -iname '*.otf' -o -iname '*.ttf' \) -print0 | while IFS= read -r -d '' f; do
-  alvo="$destino/$(basename "$f")"
-  [ -e "$alvo" ] && continue
-  d3_antes "$alvo"
-  cp "$f" "$alvo"
-done
-echo "SF Pro copiada"
-'''
+afetada_por = []
 
 [[passo]]
 tipo = "comando"

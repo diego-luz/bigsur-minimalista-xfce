@@ -249,8 +249,8 @@ function desenharOpcoes(){
 const NOMES = {sim: "Com", nao: "Sem", claro: "Claro", escuro: "Escuro",
                manter: "Manter", "do-tema": "Do tema", padrao: "Padrão",
                debian: "Debian branco", "debian-cor": "Debian magenta",
-               maca: "Maçã", tux: "Tux", "tux-cor": "Tux colorido",
-               inter: "Inter", "sf-pro": "SF Pro",
+               tux: "Tux", "tux-cor": "Tux colorido",
+               inter: "Inter",
                campos: "Nome e senha", lista: "Lista"};
 // o mesmo valor pode querer dizer coisas diferentes em opcoes diferentes
 const NOMES_POR_CHAVE = {
@@ -341,8 +341,7 @@ function desenharEsquema(){
   const fundo = fundoDoEsquema();
   e.style.setProperty("--e-img", fundo ? `url("${fundo}")` : "none");
   e.style.setProperty("--e-acento", DESTAQUE[estado.destaque] || DESTAQUE.padrao);
-  e.style.fontFamily = estado.fonte_interface === "sf-pro"
-    ? '"SF Pro Display", Inter, system-ui, sans-serif' : 'Inter, system-ui, sans-serif';
+  e.style.fontFamily = 'Inter, system-ui, sans-serif';
   $("#eEncaixe").hidden = estado.janelas !== "sim";
   const cor = estado.tema === "escuro" ? "claro" : "escuro";
   const logo = estado.logo || "debian";

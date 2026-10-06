@@ -50,7 +50,7 @@ OPCOES: tuple[Opcao, ...] = (
           ("padrao", "azul", "roxo", "rosa", "vermelho", "laranja", "amarelo", "verde", "cinza"),
           "Cor de destaque", "Cor dos botoes e da selecao"),
     Opcao("logo", "debian",
-          ("debian", "debian-cor", "maca", "tux", "tux-cor"),
+          ("debian", "debian-cor", "tux", "tux-cor"),
           "Logo do canto", "Botao que abre o menu de aplicativos"),
     Opcao("janelas", "sim", SIM_NAO,
           "Encaixe de janelas", "Bordas mais largas, atalhos e layouts no Super+Z"),
@@ -60,8 +60,6 @@ OPCOES: tuple[Opcao, ...] = (
     Opcao("papel_de_parede", "do-tema", ("do-tema", "manter"),
           "Papel de parede", "Escolha um da galeria, ou mantenha o seu",
           livre=r"[A-Za-z0-9][A-Za-z0-9._-]{0,80}"),
-    Opcao("fonte_interface", "inter", ("inter", "sf-pro"),
-          "Fonte da interface", "A Inter e livre e muito proxima da SF Pro da Apple"),
     # tela de login: alem de desktop e do-tema, aceita um nome da galeria
     Opcao("login_fundo", "desktop", ("desktop", "do-tema"),
           "Fundo da tela de login", "O mesmo do desktop, ou um da galeria",

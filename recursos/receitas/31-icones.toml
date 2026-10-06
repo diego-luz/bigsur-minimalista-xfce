@@ -4,10 +4,12 @@ nome = "icones"
 titulo = "Icones WhiteSur"
 requer = ["10"]
 
+# commit fixo (o master de 2026-10-06): o que roda e o que foi conferido. Para
+# atualizar: git ls-remote https://github.com/vinceliuice/WhiteSur-icon-theme.git master
 [[passo]]
 tipo = "git"
 url = "https://github.com/vinceliuice/WhiteSur-icon-theme.git"
-ref = "master"
+ref = "73d8040da51a9ed74e47c7366e7e9ff437601a5c"
 destino = "@@fontes@@/WhiteSur-icon-theme"
 
 [[passo]]

@@ -108,7 +108,7 @@ def gravar(novos: dict[str, Any]) -> list[str]:
             mudou.append(chave)
     if mudou:
         caminhos.preparar()
-        caminhos.CONFIG.write_text(json.dumps(atual, ensure_ascii=False, indent=2) + "\n")
+        caminhos.escrever(caminhos.CONFIG, json.dumps(atual, ensure_ascii=False, indent=2) + "\n")
     return mudou
 
 

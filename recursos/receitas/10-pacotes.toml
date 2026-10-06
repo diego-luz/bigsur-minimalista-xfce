@@ -14,7 +14,7 @@ argumentos = ["apt-get", "update"]
 [[passo]]
 tipo = "apt"
 dizer = "ferramentas para montar os temas"
-pacotes = ["git", "curl", "wget", "jq", "unzip", "sassc", "libglib2.0-dev-bin",
+pacotes = ["git", "curl", "wget", "gpg", "jq", "unzip", "sassc", "libglib2.0-dev-bin",
            "libxml2-utils", "imagemagick", "optipng", "dialog", "x11-utils"]
 
 [[passo]]

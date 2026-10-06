@@ -149,6 +149,11 @@ def condicao_atende(expressao: str, ctx: dict[str, str]) -> bool:
 # motor
 # --------------------------------------------------------------------------
 
+# arquivo de configuracao mexido pelo usuario: fica o dele, sem perguntar
+APT_SEM_PERGUNTAS = ["-o", "Dpkg::Options::=--force-confdef",
+                     "-o", "Dpkg::Options::=--force-confold"]
+
+
 class ErroDePasso(Exception):
     pass
 
@@ -176,7 +181,9 @@ class Motor:
     def _executa(self, argumentos: list[str], root: bool = False,
                  entrada: str | None = None) -> int:
         if root:
-            argumentos = ["sudo", "-n", *argumentos]
+            # o sudo limpa o ambiente: o DEBIAN_FRONTEND precisa ir por dentro,
+            # senao um pacote com pergunta (debconf) espera para sempre
+            argumentos = ["sudo", "-n", "env", "DEBIAN_FRONTEND=noninteractive", *argumentos]
         if self.simular:
             self.diz("  [simulacao] " + " ".join(shlex.quote(a) for a in argumentos))
             return 0
@@ -184,6 +191,8 @@ class Motor:
         try:
             proc = subprocess.run(
                 argumentos, input=entrada, capture_output=True, text=True,
+                # sem entrada, nada pode ficar esperando o teclado
+                stdin=subprocess.DEVNULL if entrada is None else None,
                 env={**os.environ, "DEBIAN_FRONTEND": "noninteractive", "TERM": "dumb"},
             )
         except OSError as erro:
@@ -215,8 +224,8 @@ class Motor:
             return
         self.diz(f"  instalando: {', '.join(faltam)}")
         antes = sistema.pacotes_instalados()
-        codigo = self._executa(["apt-get", "install", "-y", "--no-install-recommends",
-                                *faltam], root=True)
+        codigo = self._executa(["apt-get", *APT_SEM_PERGUNTAS, "install", "-y",
+                                "--no-install-recommends", *faltam], root=True)
         if codigo != 0:
             raise ErroDePasso(f"apt-get falhou ao instalar {', '.join(faltam)}")
         # so os que faltavam: o que ja existia na maquina nunca entra no remover.
@@ -263,10 +272,7 @@ class Motor:
             return
         existia = destino.exists()
         estado.copia_de_seguranca(destino)
-        destino.parent.mkdir(parents=True, exist_ok=True)
-        destino.write_text(conteudo)
-        if p.get("modo"):
-            destino.chmod(int(str(p["modo"]), 8))
+        caminhos.escrever(destino, conteudo, int(str(p["modo"]), 8) if p.get("modo") else None)
         self._anotar("alterado" if existia else "criado", caminho=str(destino))
         self.diz(f"  escrito {destino}")
 
@@ -285,9 +291,12 @@ class Motor:
         estado.copia_de_seguranca(destino)
         destino.parent.mkdir(parents=True, exist_ok=True)
         texto = destino.read_text() if existia else ""
-        texto = re.sub(re.escape(abre) + r".*?" + re.escape(fecha), "", texto, flags=re.S)
+        # so marcas em linha propria: um texto da pessoa que cite a marca no
+        # meio de uma linha nao vira inicio de bloco
+        texto = re.sub(r"^" + re.escape(abre) + r"$.*?^" + re.escape(fecha) + r"$", "", texto,
+                       flags=re.S | re.M)
         texto = texto.rstrip() + f"\n\n{abre}\n{conteudo.strip()}\n{fecha}\n"
-        destino.write_text(texto)
+        caminhos.escrever(destino, texto)
         # so o bloco sai no desfazer; o que a pessoa escreveu no arquivo depois fica
         self._anotar("bloco", caminho=str(destino), marca=marca,
                      comentario=p.get("comentario", ""), arquivo_novo=not existia)
@@ -301,19 +310,33 @@ class Motor:
             self.diz(f"  [simulacao] clonaria {url} em {destino}")
             return
         destino.parent.mkdir(parents=True, exist_ok=True)
+        # ref com o SHA do commit: o que roda e o que foi conferido, e nao o
+        # que estiver no ramo no dia (git clone --branch nao aceita SHA)
+        fixo = re.fullmatch(r"[0-9a-f]{40}", ref) is not None
+        git = ["git", "-C", str(destino)]
         if (destino / ".git").is_dir():
             self.diz(f"  atualizando {destino.name}")
-            self._executa(["git", "-C", str(destino), "remote", "set-url", "origin", url])
-            if self._executa(["git", "-C", str(destino), "fetch", "--depth", "1",
-                              "origin", ref]) == 0:
-                self._executa(["git", "-C", str(destino), "checkout", "-f", "FETCH_HEAD"])
-            return
-        self.diz(f"  clonando {destino.name}")
-        if self._executa(["git", "clone", "--depth", "1", "--branch", ref, url,
-                          str(destino)]) != 0:
-            if self._executa(["git", "clone", "--depth", "1", url, str(destino)]) != 0:
-                raise ErroDePasso(f"nao consegui clonar {url}")
-        self._anotar("criado", caminho=str(destino))
+            self._executa([*git, "remote", "set-url", "origin", url])
+            if self._executa([*git, "fetch", "--depth", "1", "origin", ref]) == 0:
+                self._executa([*git, "checkout", "-q", "-f", "FETCH_HEAD"])
+        else:
+            self.diz(f"  clonando {destino.name}")
+            nova = not destino.exists()
+            destino.mkdir(parents=True, exist_ok=True)
+            if (self._executa([*git, "init", "-q"]) != 0
+                    or self._executa([*git, "remote", "add", "origin", url]) != 0
+                    or self._executa([*git, "fetch", "--depth", "1", "origin", ref]) != 0
+                    or self._executa([*git, "checkout", "-q", "-f", "FETCH_HEAD"]) != 0):
+                if nova:
+                    shutil.rmtree(destino, ignore_errors=True)
+                raise ErroDePasso(f"nao consegui clonar {url} ({ref})")
+            self._anotar("criado", caminho=str(destino))
+        if fixo:
+            atual = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True,
+                                   text=True).stdout.strip()
+            if atual != ref:
+                raise ErroDePasso(f"{destino.name} esta em {atual[:12] or '?'}, e nao no "
+                                  f"commit conferido {ref[:12]}")
 
     def passo_comando(self, p: dict) -> None:
         argumentos = [str(x) for x in resolver(p["argumentos"], self.ctx)]
@@ -336,9 +359,16 @@ class Motor:
                 ambiente[f"D3_{chave.upper()}"] = str(valor)
         # as funcoes d3_antes, d3_xfconf... que anotam no diario (ver diario.py)
         ambiente.update(diario.ambiente_shell(self.receita, self.anotar))
+        # so o trecho que chama o sudo ele mesmo usa a senha ja confirmada (que
+        # vale para este terminal); os outros rodam fora dele, numa sessao nova,
+        # entao um instalador de terceiros que tente "sudo" por conta propria falha
+        usa_sudo = re.search(r"\bsudo\b", corpo) is not None
+        if not usa_sudo:
+            ambiente["SUDO_ASKPASS"] = "/bin/false"
         estado.registrar("+ shell:\n" + corpo)
         proc = subprocess.run(["bash", "-euo", "pipefail", "-c", diario.FUNCOES_SHELL + corpo],
-                              capture_output=True, text=True, env=ambiente)
+                              capture_output=True, text=True, env=ambiente,
+                              stdin=subprocess.DEVNULL, start_new_session=not usa_sudo)
         for linha in (proc.stdout or "").splitlines():
             self.diz("  " + linha)
         if proc.returncode != 0:
@@ -405,8 +435,7 @@ class Motor:
             return
         existia = arquivo.exists()
         estado.copia_de_seguranca(arquivo)
-        arquivo.parent.mkdir(parents=True, exist_ok=True)
-        arquivo.write_text(conteudo)
+        caminhos.escrever(arquivo, conteudo)
         self._anotar("alterado" if existia else "criado", caminho=str(arquivo))
         self.diz(f"  inicializacao automatica: {ident}")
 

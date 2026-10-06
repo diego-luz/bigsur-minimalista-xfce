@@ -8,6 +8,24 @@
 (() => {
 "use strict";
 
+/* Toda acao (POST) vai como JSON: o servidor recusa outro formato, para um
+   site qualquer aberto no navegador nao conseguir mandar ordens ao painel.
+   Sem a sessao (pagina aberta sem o link do terminal), avisa uma vez. */
+const _fetch = window.fetch.bind(window);
+let avisouAcesso = false;
+window.fetch = async (url, op = {}) => {
+  if (op.method && op.method.toUpperCase() !== "GET") {
+    op = {...op, headers: {"Content-Type": "application/json", ...(op.headers || {})}};
+    if (op.body === undefined) op.body = "{}";
+  }
+  const r = await _fetch(url, op);
+  if (r.status === 403 && !avisouAcesso) {
+    avisouAcesso = true;
+    alert("O painel não aceitou esta janela. Abra-o pelo link mostrado no terminal (o link vale uma vez).");
+  }
+  return r;
+};
+
 const el = (tag, classe, texto) => {
   const e = document.createElement(tag);
   if (classe) e.className = classe;

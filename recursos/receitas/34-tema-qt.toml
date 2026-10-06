@@ -12,10 +12,12 @@ tipo = "apt"
 dizer = "instalando o Kvantum"
 pacotes = ["qt-style-kvantum", "qt5-gtk-platformtheme", "qt6-gtk-platformtheme"]
 
+# commit fixo (o master de 2026-10-06): o que roda e o que foi conferido. Para
+# atualizar: git ls-remote https://github.com/vinceliuice/WhiteSur-kde.git master
 [[passo]]
 tipo = "git"
 url = "https://github.com/vinceliuice/WhiteSur-kde.git"
-ref = "master"
+ref = "cf4df59ce91004f7ea39358b1b8ff917d5c329f7"
 destino = "@@fontes@@/WhiteSur-kde"
 
 # o install.sh do WhiteSur-kde instala tambem coisas do Plasma; aqui so

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import shutil
+import subprocess
 from pathlib import Path
 
 from . import caminhos
@@ -63,6 +64,8 @@ def copia_de_seguranca(alvo: Path) -> bool:
     alvo = Path(alvo).expanduser()
     if not alvo.exists():
         return False
+    if not caminhos.da_pessoa(alvo):
+        return _copia_do_sistema(alvo)
     destino = caminhos.BACKUP / str(alvo).lstrip("/")
     if destino.exists():
         return True
@@ -77,6 +80,25 @@ def copia_de_seguranca(alvo: Path) -> bool:
     except (OSError, shutil.Error) as erro:
         registrar(f"falhou a copia de {alvo}: {erro}")
         return False
+
+
+def _copia_do_sistema(alvo: Path) -> bool:
+    """Arquivo do sistema: a copia fica em caminhos.BACKUP_SISTEMA, do root e
+    fechada (0700), e e de la que o desfazer devolve."""
+    raiz = str(caminhos.BACKUP_SISTEMA)
+    destino = str(caminhos.BACKUP_SISTEMA / str(alvo).lstrip("/"))
+    # so a primeira versao, como na pasta da pessoa
+    trecho = ('[ -e "$2" ] || [ -L "$2" ] && exit 0; '
+              'install -d -m 0700 -o root -g root "$1" && mkdir -p "$(dirname "$2")" '
+              '&& cp -a "$3" "$2"')
+    try:
+        ok = subprocess.run(["sudo", "-n", "sh", "-c", trecho, "sh", raiz, destino, str(alvo)],
+                            capture_output=True, stdin=subprocess.DEVNULL,
+                            timeout=600).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        ok = False
+    registrar(f"copia de seguranca (root): {alvo}" if ok else f"falhou a copia (root) de {alvo}")
+    return ok
 
 
 def restaurar_tudo() -> list[str]:
@@ -95,6 +117,9 @@ def restaurar_tudo() -> list[str]:
         if len(relativo.parts) < 2 or not (Path("/") / relativo.parts[0]).is_dir():
             continue
         destino = Path("/") / relativo
+        # fora da casa, so o que esta na pasta do root volta (desfazer.py)
+        if not caminhos.da_pessoa(destino):
+            continue
         try:
             destino.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(origem, destino)

@@ -642,10 +642,12 @@ async function desenharPreviaApagar(){
   };
   const sai = [];
   if (p.pacotes.length) sai.push("Pacotes desinstalados com apt: " + p.pacotes.join(", "));
+  (p.fontes_externas || []).forEach(a => sai.push("Apagado: " + a + " (fonte de programas de fora do Debian)"));
   p.pastas_do_projeto.forEach(a => sai.push("Apagado: " + a + " (opções, log, cópias e downloads)"));
   if (sai.length) lista("Será apagado", sai);
   else caixa.appendChild(criarEl("b", "Nada instalado pelo projeto foi encontrado"));
   lista("Fica instalado", p.ficam.map(f => `${f.nome}: ${f.motivo}`));
+  lista("Confira e apague à mão, se for do projeto (pode ter existido antes)", p.conferir || []);
   if (p.origem === "historico"){
     const nota = criarEl("p", "Esta instalação é anterior ao diário de alterações; a lista de pacotes veio "
       + "do histórico do apt, e só as cópias de segurança voltam.");

@@ -118,6 +118,15 @@ def executar(apenas: list[str] | None = None, pular: list[str] | None = None,
              cfg: dict[str, str] | None = None) -> int:
     """Roda as receitas escolhidas. Devolve quantas falharam."""
     diz = saida or print
+    try:
+        with caminhos.trava():
+            return _executar(apenas, pular, refazer, simular, diz, cfg)
+    except caminhos.Ocupado as erro:
+        diz(f"{erro}; espere terminar")
+        return 1
+
+
+def _executar(apenas, pular, refazer, simular, diz, cfg) -> int:
     caminhos.preparar()
     cfg = cfg or config.ler()
     ctx = motor.montar_contexto(cfg)

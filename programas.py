@@ -13,9 +13,19 @@ import subprocess
 from pathlib import Path
 from typing import Callable
 
-from . import caminhos, hardware, sistema
+from . import caminhos, diario, hardware, motor, sistema
 
 LIMITE = 60          # pacotes por operacao
+
+# o que o fonte-externa.sh pode criar no sistema (chave, lista e preferencias
+# de cada fonte); o desfazer com "apagar" so tira estes, e so os que nao
+# existiam antes
+ARQUIVOS_DE_FONTE = {
+    f"{pasta}/{nome}{fim}"
+    for nome in ("microsoft-vscode", "docker")
+    for pasta, fim in (("/usr/share/keyrings", ".gpg"), ("/etc/apt/sources.list.d", ".list"),
+                       ("/etc/apt/preferences.d", ""))
+}
 
 
 def catalogo() -> dict:
@@ -119,7 +129,10 @@ PROGRESSO_APT = ["-o", "APT::Status-Fd=1"]
 
 
 def comando_instalar(pacotes: list[str]) -> list[str]:
-    return ["apt-get", *PROGRESSO_APT, "install", "-y", "--no-install-recommends", *pacotes]
+    # o sudo limpa o ambiente: o DEBIAN_FRONTEND vai por dentro, pelo env
+    return ["env", "DEBIAN_FRONTEND=noninteractive", "apt-get", *PROGRESSO_APT,
+            *motor.APT_SEM_PERGUNTAS, "install", "-y",
+            "--no-install-recommends", *pacotes]
 
 
 def instalar(pacotes: list[str], diz: Callable[[str], None]) -> int:
@@ -128,10 +141,36 @@ def instalar(pacotes: list[str], diz: Callable[[str], None]) -> int:
     Um item pode levar pacotes junto ("junto") e pedir um roteiro de
     configuracao depois do apt ("depois"), como o Docker rootless.
     """
+    try:
+        with caminhos.trava():
+            return _instalar(pacotes, diz)
+    except caminhos.Ocupado as erro:
+        diz(f"{erro}; espere terminar")
+        return 1
+
+
+def remover(pacotes: list[str], diz: Callable[[str], None]) -> int:
+    try:
+        with caminhos.trava():
+            comando = comando_remover(pacotes)
+            diz("$ sudo " + " ".join(comando))
+            return _correr(["sudo", "-n", *comando], diz)
+    except caminhos.Ocupado as erro:
+        diz(f"{erro}; espere terminar")
+        return 1
+
+
+def _instalar(pacotes: list[str], diz: Callable[[str], None]) -> int:
     for pedido in fontes_necessarias(pacotes):
         diz(f"habilitando a fonte de {pedido['nome']}: {pedido['fonte']}")
         roteiro = caminhos.ARQUIVOS / "fonte-externa.sh"
+        antes = {c for c in ARQUIVOS_DE_FONTE if Path(c).exists()}
         codigo = _correr(["sudo", "-n", "bash", str(roteiro), pedido["fonte"]], diz)
+        # anotado para o desfazer com "apagar": so o que este passo criou
+        criados = sorted(c for c in ARQUIVOS_DE_FONTE - antes if Path(c).exists())
+        if criados:
+            diario.anotar("fonte_externa", receita="programas", fonte=pedido["fonte"],
+                          criados=criados)
         if codigo != 0:
             diz("nao consegui habilitar a fonte; nada foi instalado")
             return codigo
@@ -141,8 +180,7 @@ def instalar(pacotes: list[str], diz: Callable[[str], None]) -> int:
     for nome in pacotes:
         todos += [p for p in tabela.get(nome, {}).get("junto", []) if p not in todos]
     diz("instalando: " + ", ".join(todos))
-    codigo = _correr(["sudo", "-n", "env", "DEBIAN_FRONTEND=noninteractive",
-                      *comando_instalar(todos)], diz)
+    codigo = _correr(["sudo", "-n", *comando_instalar(todos)], diz)
     if codigo != 0:
         return codigo
 
@@ -177,4 +215,5 @@ def _correr(argumentos: list[str], diz: Callable[[str], None]) -> int:
 
 
 def comando_remover(pacotes: list[str]) -> list[str]:
-    return ["apt-get", *PROGRESSO_APT, "remove", "-y", *pacotes]
+    return ["env", "DEBIAN_FRONTEND=noninteractive", "apt-get", *PROGRESSO_APT, "remove", "-y",
+            *pacotes]

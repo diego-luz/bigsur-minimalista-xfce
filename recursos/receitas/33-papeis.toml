@@ -4,10 +4,12 @@ nome = "papeis"
 titulo = "Papeis de parede Big Sur"
 requer = ["10"]
 
+# commit fixo (o main de 2026-10-06): o que roda e o que foi conferido. Para
+# atualizar: git ls-remote https://github.com/vinceliuice/WhiteSur-wallpapers.git main
 [[passo]]
 tipo = "git"
 url = "https://github.com/vinceliuice/WhiteSur-wallpapers.git"
-ref = "main"
+ref = "5c1d7ca20b8de0a7efe443792c19e49277262e02"
 destino = "@@fontes@@/WhiteSur-wallpapers"
 
 [[passo]]

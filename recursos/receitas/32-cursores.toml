@@ -4,10 +4,12 @@ nome = "cursores"
 titulo = "Cursores WhiteSur"
 requer = ["10"]
 
+# commit fixo (o master de 2026-10-06): o que roda e o que foi conferido. Para
+# atualizar: git ls-remote https://github.com/vinceliuice/WhiteSur-cursors.git master
 [[passo]]
 tipo = "git"
 url = "https://github.com/vinceliuice/WhiteSur-cursors.git"
-ref = "master"
+ref = "e190baf618ed95ee217d2fd45589bd309b37672b"
 destino = "@@fontes@@/WhiteSur-cursors"
 
 [[passo]]

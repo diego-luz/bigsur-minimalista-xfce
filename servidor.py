@@ -6,7 +6,11 @@ acessivel pela rede. Quem quiser usar de outro computador que faca tunel SSH.
 
 from __future__ import annotations
 
+import hmac
+import html
+import http.cookies
 import json
+import secrets
 import signal
 import subprocess
 import threading
@@ -30,15 +34,92 @@ TIPOS = {
     ".ico": "image/x-icon", ".woff2": "font/woff2",
 }
 
+NOME = "d3bian-init-bigsur-minimalista-xfce"
+
 tarefa = Tarefa()
 parar = threading.Event()
 
+# Acesso: so a pagina aberta pelo link do terminal fala com a API. O link traz
+# um codigo de uso unico (ENTRADA) que vira um cookie secreto (CHAVE); sem ele,
+# um site qualquer aberto no navegador (ou outro usuario da maquina) nao
+# consegue mandar o painel instalar, desfazer ou apagar nada.
+CHAVE = secrets.token_urlsafe(32)
+_entrada = {"codigo": secrets.token_urlsafe(32)}
+_trava_entrada = threading.Lock()
+
+
+def link_de_entrada(porta: int) -> str:
+    return f"http://127.0.0.1:{porta}/entrar?k={_entrada['codigo']}"
+
+
+def _nome_cookie(porta: int) -> str:
+    # cookies nao separam portas: cada painel usa o seu nome
+    return f"painel_{porta}"
+
+
+ACESSO_HTML = ("<!doctype html><meta charset=utf-8><title>" + html.escape(NOME) + "</title>"
+               "<body style='font-family:sans-serif;max-width:36em;margin:4em auto;line-height:1.5'>"
+               "<h1>Abra pelo link do terminal</h1><p>Por segurança, este painel só aceita a janela "
+               "aberta pelo link que aparece no terminal onde ele está rodando (o link vale uma vez; "
+               "depois de usado, o terminal mostra outro).</p>").encode()
+
 
 class Painel(BaseHTTPRequestHandler):
-    server_version = "d3bian-init-bigsur-minimalista-xfce"
+    server_version = NOME
 
     def log_message(self, *_a) -> None:
         pass
+
+    # ---- acesso ----------------------------------------------------------
+    def _porta(self) -> int:
+        return self.server.server_address[1]
+
+    def _host_ok(self) -> bool:
+        # contra DNS rebinding: um site que aponta o proprio nome para
+        # 127.0.0.1 chega aqui com o Host dele
+        porta = self._porta()
+        return self.headers.get("Host", "") in (f"127.0.0.1:{porta}", f"localhost:{porta}")
+
+    def _sessao_ok(self) -> bool:
+        cookie = http.cookies.SimpleCookie()
+        try:
+            cookie.load(self.headers.get("Cookie", ""))
+        except http.cookies.CookieError:
+            return False
+        valor = cookie.get(_nome_cookie(self._porta()))
+        return bool(valor) and hmac.compare_digest(valor.value, CHAVE)
+
+    def _post_ok(self) -> bool:
+        porta = self._porta()
+        origem = self.headers.get("Origin")
+        if origem is not None and origem not in (f"http://127.0.0.1:{porta}", f"http://localhost:{porta}"):
+            return False
+        # JSON obriga o navegador a perguntar antes (preflight), que nao respondemos
+        if not self.headers.get("Content-Type", "").startswith("application/json"):
+            return False
+        return self._sessao_ok()
+
+    def _negado(self) -> None:
+        self.json({"motivo": "acesso", "detalhe": "abra o painel pelo link mostrado no terminal"}, 403)
+
+    def _entrar(self) -> None:
+        recebido = self.path.split("k=", 1)[1].split("&")[0] if "k=" in self.path else ""
+        porta = self._porta()
+        with _trava_entrada:
+            valido = bool(recebido) and hmac.compare_digest(recebido, _entrada["codigo"])
+            if valido:
+                # uso unico: o link pode ter ficado no historico ou na lista de
+                # processos; o terminal mostra um novo para outra janela
+                _entrada["codigo"] = secrets.token_urlsafe(32)
+                print(f"  para abrir em outra janela: {link_de_entrada(porta)}")
+        if not valido:
+            self._envia(403, ACESSO_HTML, "text/html; charset=utf-8")
+            return
+        self.send_response(303)
+        self.send_header("Set-Cookie", f"{_nome_cookie(porta)}={CHAVE}; HttpOnly; SameSite=Strict; Path=/")
+        self.send_header("Location", "/")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     # ---- respostas -------------------------------------------------------
     def _envia(self, codigo: int, corpo: bytes, tipo: str) -> None:
@@ -79,9 +160,22 @@ class Painel(BaseHTTPRequestHandler):
 
     # ---- GET -------------------------------------------------------------
     def do_GET(self) -> None:
+        if not self._host_ok():
+            self._envia(403, b"host nao permitido", "text/plain; charset=utf-8")
+            return
         rota = self.path.split("?")[0]
+        if rota == "/entrar":
+            self._entrar()
+            return
         if rota == "/":
             rota = "/index.html"
+        if rota.startswith("/api/") and not self._sessao_ok():
+            self._negado()
+            return
+        if rota.endswith(".html") and not self._sessao_ok():
+            # a pagina sem a sessao nao serviria para nada: explica o que fazer
+            self._envia(403, ACESSO_HTML, "text/html; charset=utf-8")
+            return
 
         if rota == "/api/estado":
             lista = receitas.carregar()
@@ -156,17 +250,26 @@ class Painel(BaseHTTPRequestHandler):
             return
 
         alvo = (caminhos.WEB / rota.lstrip("/")).resolve()
-        if not str(alvo).startswith(str(caminhos.WEB.resolve())):
+        if not alvo.is_relative_to(caminhos.WEB.resolve()):
             self._envia(404, b"nao encontrado", "text/plain; charset=utf-8")
             return
         self.arquivo(alvo)
 
     # ---- POST ------------------------------------------------------------
     def do_POST(self) -> None:
+        # toda rota POST passa por aqui: acao so com a sessao, em JSON e da
+        # propria pagina
+        if not (self._host_ok() and self._post_ok()):
+            self._negado()
+            return
         rota = self.path.split("?")[0]
         corpo = self.corpo()
 
         if rota == "/api/sair":
+            # sair no meio do apt deixaria o dpkg pela metade
+            if tarefa.ocupada():
+                self.json({"tchau": False, "motivo": "ocupado", "detalhe": tarefa.rotulo}, 409)
+                return
             self.json({"tchau": True})
             threading.Timer(0.4, parar.set).start()
             return
@@ -313,9 +416,9 @@ class Painel(BaseHTTPRequestHandler):
                 self.json({"iniciado": False, "motivo": "arrasta_outros",
                            "extras": extras})
                 return
-            comando = programas.comando_remover(escolhidos)
             rotulo = "Removendo: " + ", ".join(escolhidos)
-            iniciado = tarefa.processo(rotulo, comando, root=True)
+            iniciado = tarefa.funcao(
+                rotulo, lambda diz: programas.remover(escolhidos, diz))
         else:
             rotulo = "Instalando: " + ", ".join(escolhidos)
             iniciado = tarefa.funcao(
@@ -347,9 +450,9 @@ def subir(porta: int = PORTA_PADRAO, abrir: bool = True) -> int:
     httpd.daemon_threads = True
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
-    endereco = f"http://127.0.0.1:{porta}/"
-    print(f"\n  d3bian-init-bigsur-minimalista-xfce aberto em {endereco}")
-    print("  Feche pelo botao na pagina, ou com Ctrl+C aqui.\n")
+    endereco = link_de_entrada(porta)
+    print(f"\n  {NOME} aberto em {endereco}")
+    print("  (o link vale uma vez; feche pelo botao na pagina, ou com Ctrl+C aqui)\n")
     if abrir:
         try:
             subprocess.Popen(["xdg-open", endereco],
@@ -357,8 +460,17 @@ def subir(porta: int = PORTA_PADRAO, abrir: bool = True) -> int:
         except OSError:
             print("  abra o endereco acima no seu navegador")
 
-    signal.signal(signal.SIGINT, lambda *_: parar.set())
-    signal.signal(signal.SIGTERM, lambda *_: parar.set())
+    def encerrar(*_a) -> None:
+        # no meio de uma tarefa, o 1o Ctrl+C so avisa: o apt pela metade
+        # deixaria o dpkg quebrado; o 2o encerra assim mesmo
+        if tarefa.ocupada() and not encerrar.avisou:
+            encerrar.avisou = True
+            print("\n  ainda instalando: espere terminar, ou Ctrl+C de novo para sair assim mesmo")
+            return
+        parar.set()
+    encerrar.avisou = False
+    signal.signal(signal.SIGINT, encerrar)
+    signal.signal(signal.SIGTERM, encerrar)
     while not parar.is_set():
         time.sleep(0.3)
     print("  encerrando o painel")

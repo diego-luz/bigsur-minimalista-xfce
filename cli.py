@@ -154,10 +154,14 @@ def cmd_restaurar(args) -> int:
         print("  com --apagar, tambem sera apagado:")
         if previa["pacotes"]:
             print(f"    pacotes desinstalados com apt: {', '.join(previa['pacotes'])}")
+        for arquivo in previa.get("fontes_externas", []):
+            print(f"    {arquivo}")
         for pasta in previa["pastas_do_projeto"]:
             print(f"    {pasta}")
         for item in previa["ficam"]:
             print(f"    fica: {item['nome']} ({item['motivo']})")
+        for item in previa.get("conferir", []):
+            print(f"    confira a mao (pode ter existido antes): {item}")
     if not args.sim:
         print("  isto volta a maquina ao que era antes: desfaz o que as receitas declaram e o")
         print("  diario de alteracoes." + ("" if args.apagar else " Pacotes instalados ficam (--apagar remove)."))
@@ -224,6 +228,7 @@ def construir() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     caminhos.preparar()
+    caminhos.proteger_codigo()
     parser = construir()
     args = parser.parse_args(argv)
     if not getattr(args, "func", None):

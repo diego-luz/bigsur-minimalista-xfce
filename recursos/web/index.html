@@ -106,7 +106,11 @@ fetch("/api/estado").then(r => r.json()).then(d => {
 })();
 
 $("#btSair").addEventListener("click", async () => {
-  await fetch("/api/sair", {method: "POST"}).catch(() => {});
+  const r = await fetch("/api/sair", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"}).catch(() => null);
+  if (r && r.status === 409) {
+    alert("Ainda há uma tarefa em andamento. Espere terminar para fechar o painel.");
+    return;
+  }
   document.body.textContent = "";
   const cx = document.createElement("div");
   cx.style.cssText = "text-align:center;padding:90px 20px";

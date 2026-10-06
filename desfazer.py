@@ -31,7 +31,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable
 
-from . import caminhos, config, diario, estado, motor, receitas, sistema
+from . import caminhos, config, diario, estado, motor, programas, receitas, sistema
 
 Diz = Callable[[str], None]
 
@@ -116,11 +116,38 @@ def _limpar_vazias(pasta: Path, diz: Diz) -> None:
         pasta = pasta.parent
 
 
+# Fora da pasta pessoal, o desfazer (que roda como root ali) so apaga estes: o
+# diario fica numa pasta do usuario e nao decide sozinho o que o root apaga.
+# Sao os caminhos de sistema que as receitas criam; quem acrescentar uma
+# receita que crie outro, acrescenta aqui.
+APAGAVEIS_FORA_DE_CASA = {
+    *(f"/usr/share/themes/WhiteSur-{v}{s}{'' if c == 'default' else '-' + c}"
+      for v in ("Light", "Dark") for s in ("", "-solid") for c in motor.DESTAQUE_EXTERNO.values()),
+    "/usr/share/icons/WhiteSur", "/usr/share/icons/WhiteSur-dark",
+    "/usr/share/icons/WhiteSur-light", "/usr/share/icons/WhiteSur-cursors",
+    "/usr/share/backgrounds/d3bian-init-minimalista", "/usr/share/themes/d3bian-login",
+    "/etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf",
+    "/etc/lightdm/lightdm.conf.d/90-d3bian.conf",
+    # fontes de terceiros da pagina de programas (fonte-externa.sh)
+    *programas.ARQUIVOS_DE_FONTE,
+    str(caminhos.BACKUP_SISTEMA),
+}
+
+
+def _apagavel(caminho: Path) -> bool:
+    if caminho.is_relative_to(Path.home()):
+        return not caminho.is_symlink() or caminho.resolve().is_relative_to(Path.home())
+    return str(caminho) in APAGAVEIS_FORA_DE_CASA
+
+
 def _apagar(caminho: Path, diz: Diz) -> None:
     if caminho in PROTEGIDOS or len(caminho.parts) < 3:
         diz(f"  atencao: {caminho} nao e apagado (caminho protegido)")
         return
     if not caminho.exists() and not caminho.is_symlink():
+        return
+    if not _apagavel(caminho):
+        diz(f"  atencao: confira e apague a mao, se for do projeto: {caminho}")
         return
     if _da_pessoa(caminho):
         if caminho.is_dir() and not caminho.is_symlink():
@@ -135,25 +162,34 @@ def _apagar(caminho: Path, diz: Diz) -> None:
 
 
 def _voltar_copia(caminho: Path, diz: Diz) -> None:
+    if not _da_pessoa(caminho):
+        _voltar_copia_do_sistema(caminho, diz)
+        return
     copia = caminhos.BACKUP / str(caminho).lstrip("/")
     if not copia.exists():
         diz(f"  atencao: sem copia de seguranca de {caminho}; fica como esta")
         return
-    if _da_pessoa(caminho):
-        if caminho.is_dir() and not caminho.is_symlink():
-            shutil.rmtree(caminho, ignore_errors=True)
-        caminho.parent.mkdir(parents=True, exist_ok=True)
-        if copia.is_dir():
-            shutil.copytree(copia, caminho, symlinks=True, dirs_exist_ok=True)
-        else:
-            shutil.copy2(copia, caminho)
+    if caminho.is_dir() and not caminho.is_symlink():
+        shutil.rmtree(caminho, ignore_errors=True)
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    if copia.is_dir():
+        shutil.copytree(copia, caminho, symlinks=True, dirs_exist_ok=True)
     else:
-        _rodar(["sudo", "-n", "rm", "-rf", str(caminho)], diz)
-        if _rodar(["sudo", "-n", "cp", "-a", str(copia), str(caminho)], diz) != 0:
-            diz(f"  nao consegui devolver {caminho}")
-            return
-        # a copia foi feita com o usuario; no sistema, o dono volta a ser o root
-        _rodar(["sudo", "-n", "chown", "-R", "root:root", str(caminho)], diz)
+        shutil.copy2(copia, caminho)
+    diz(f"  devolvido {caminho}")
+
+
+def _voltar_copia_do_sistema(caminho: Path, diz: Diz) -> None:
+    """Arquivo do sistema volta so da copia do root (caminhos.BACKUP_SISTEMA):
+    a da pasta da pessoa poderia ter sido trocada por qualquer programa dela."""
+    copia = caminhos.BACKUP_SISTEMA / str(caminho).lstrip("/")
+    if _rodar(["sudo", "-n", "test", "-e", str(copia)], diz) != 0:
+        diz(f"  atencao: sem copia de seguranca (do root) de {caminho}; fica como esta")
+        return
+    _rodar(["sudo", "-n", "rm", "-rf", str(caminho)], diz)
+    if _rodar(["sudo", "-n", "cp", "-a", str(copia), str(caminho)], diz) != 0:
+        diz(f"  nao consegui devolver {caminho}")
+        return
     diz(f"  devolvido {caminho}")
 
 
@@ -163,10 +199,12 @@ def tirar_bloco(arquivo: Path, marca: str, comentario: str) -> bool:
         return False
     abre, fecha = (f"# {marca}", f"# fim {marca}") if comentario == "#" else (f"/* {marca} */", f"/* fim {marca} */")
     texto = arquivo.read_text()
-    novo = re.sub(r"\n*" + re.escape(abre) + r".*?" + re.escape(fecha) + r"\n?", "\n", texto, flags=re.S)
+    # as mesmas marcas em linha propria do motor.passo_bloco
+    novo = re.sub(r"\n*^" + re.escape(abre) + r"$.*?^" + re.escape(fecha) + r"$\n?", "\n", texto,
+                  flags=re.S | re.M)
     if novo == texto:
         return False
-    arquivo.write_text(novo.strip("\n") + "\n" if novo.strip() else "")
+    caminhos.escrever(arquivo, novo.strip("\n") + "\n" if novo.strip() else "")
     return True
 
 
@@ -297,7 +335,7 @@ def _historico_apt() -> list[str]:
     achados = set()
     for bloco in "\n\n".join(textos).split("\n\n"):
         data = re.search(r"^Start-Date: (\S+)", bloco, re.M)
-        pedido = re.search(r"^Commandline: apt-get install -y --no-install-recommends (.+)$", bloco, re.M)
+        pedido = re.search(r"^Commandline: apt-get (?:-o \S+ )*install -y --no-install-recommends (.+)$", bloco, re.M)
         por = re.search(r"^Requested-By: (\S+) ", bloco, re.M)
         if not (data and pedido and por) or por.group(1) != usuario:
             continue
@@ -345,12 +383,21 @@ def previa_remocao() -> dict:
                 ficam.append({"nome": nome, "motivo": "outros programas dependem dele: " + ", ".join(levaria[:6])
                               + ("…" if len(levaria) > 6 else "")})
                 mudou = True
-    pastas = [str(p) for p in (caminhos.CONFIG_DIR, caminhos.DADOS_DIR, caminhos.ESTADO_DIR) if p.exists()]
+    pastas = [str(p) for p in (caminhos.CONFIG_DIR, caminhos.DADOS_DIR, caminhos.ESTADO_DIR,
+                               caminhos.BACKUP_SISTEMA) if p.exists()]
+    # so o que o diario anotou ao criar e a lista acima permite sai; o resto
+    # aparece para conferir a mao (pode ter existido antes do projeto)
+    conferir = sorted({e["caminho"] for e in itens if e.get("tipo") == "criado" and e.get("caminho")
+                       and not _apagavel(Path(e["caminho"]))
+                       and (Path(e["caminho"]).exists() or Path(e["caminho"]).is_symlink())})
+    fontes = sorted({c for e in itens if e.get("tipo") == "fonte_externa" for c in e.get("criados", [])
+                     if c in APAGAVEIS_FORA_DE_CASA and Path(c).exists()})
     # dependencias que o apt trouxe junto; so saem as que ninguem mais usa, depois dos pacotes
     dependencias = sorted({d for e in itens if e.get("tipo") == "pacotes" for d in e.get("dependencias", [])}
                           - set(pacotes) - {f["nome"] for f in ficam})
     return {"pacotes": pacotes, "ficam": ficam, "pastas_do_projeto": pastas, "origem": origem,
-            "mudancas": len(itens), "dependencias": dependencias}
+            "mudancas": len(itens), "dependencias": dependencias, "conferir": conferir,
+            "fontes_externas": fontes}
 
 
 def _orfas() -> set[str]:
@@ -375,7 +422,7 @@ def _dependencias_anotadas(nomes: list[str], diz: Diz) -> None:
                 mudou = True
     if sobram:
         diz(f"  dependencias que vieram com eles: {', '.join(sobram)}")
-        if _rodar(["sudo", "-n", "apt-get", "remove", "-y", *sobram], diz) != 0:
+        if _rodar(["sudo", "-n", "env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "remove", "-y", *sobram], diz) != 0:
             diz("  atencao: nao consegui tirar essas dependencias")
 
 
@@ -389,17 +436,25 @@ def _remover(diz: Diz) -> int:
         # o que ja sobrava antes nao e do projeto e fica
         orfas_antes = _orfas()
         diz(f"  desinstalando com apt: {', '.join(previa['pacotes'])}")
-        if _rodar(["sudo", "-n", "apt-get", "remove", "-y", *previa["pacotes"]], diz) != 0:
+        if _rodar(["sudo", "-n", "env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "remove", "-y", *previa["pacotes"]], diz) != 0:
             diz("  ERRO: apt-get remove falhou; as pastas do projeto ficam")
             return 1
         novas = sorted(_orfas() - orfas_antes)
         if novas:
             diz(f"  dependencias que so estavam ali pelo projeto: {', '.join(novas)}")
-            if _rodar(["sudo", "-n", "apt-get", "remove", "-y", *novas], diz) != 0:
+            if _rodar(["sudo", "-n", "env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "remove", "-y", *novas], diz) != 0:
                 diz("  atencao: nao consegui tirar as dependencias; sudo apt autoremove limpa depois")
         _dependencias_anotadas(previa.get("dependencias", []), diz)
+    # fontes de terceiros que a pagina de programas acrescentou ao apt
+    for arquivo in previa.get("fontes_externas", []):
+        _apagar(Path(arquivo), diz)
+    for item in previa.get("conferir", []):
+        diz(f"  atencao: confira e apague a mao, se for do projeto: {item}")
     # por ultimo: o log, o diario e as copias que as etapas anteriores ainda usaram
     for pasta in previa["pastas_do_projeto"]:
+        if Path(pasta) == caminhos.BACKUP_SISTEMA:
+            _apagar(caminhos.BACKUP_SISTEMA, diz)
+            continue
         shutil.rmtree(pasta, ignore_errors=True)
         diz(f"  apagado {pasta}")
     return 0
@@ -409,6 +464,15 @@ def _remover(diz: Diz) -> int:
 
 def executar(diz: Diz = print, apagar: bool = False) -> int:
     """Desfaz tudo, uma etapa por vez. Devolve quantas falharam."""
+    try:
+        with caminhos.trava():
+            return _executar(diz, apagar)
+    except caminhos.Ocupado as erro:
+        diz(f"  {erro}; espere terminar")
+        return 1
+
+
+def _executar(diz: Diz, apagar: bool) -> int:
     caminhos.preparar()
     passos = {"d1": _receitas, "d2": _diario,
               "d3": lambda d: (estado.limpar_marcas(), d("  a pagina volta a mostrar a instalacao completa"))[0] or 0,

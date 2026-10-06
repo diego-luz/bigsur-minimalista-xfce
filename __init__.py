@@ -1,4 +1,4 @@
-"""d3bian-init-bigsur-xfce: prepara e ajusta um Debian com XFCE por uma pagina local.
+"""d3bian-init-bigsur-minimalista-xfce: prepara e ajusta um Debian com XFCE por uma pagina local.
 
 Roda so com a biblioteca padrao do Python, que ja vem instalada no Debian.
 Nada de pip, nada de dependencia externa.

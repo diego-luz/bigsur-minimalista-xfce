@@ -4,7 +4,53 @@ nome = "terminal"
 titulo = "Cores e transparencia do terminal"
 afetada_por = ["fonte_interface"]
 
+# O xfce4-terminal 1.x guarda tudo no xfconf; o terminalrc so e lido uma vez,
+# para migrar, e o que ele traz nao voltaria ao desfazer. Cada propriedade vai
+# pelo xfconf e fica anotada no diario com o valor de antes.
 [[passo]]
-tipo = "arquivo"
-destino = "~/.config/xfce4/terminal/terminalrc"
-modelo = "terminalrc"
+tipo = "script"
+dizer = "fonte, cores e transparencia do xfce4-terminal"
+corpo = '''
+command -v xfce4-terminal >/dev/null || { echo "xfce4-terminal nao instalado; nada a fazer"; exit 0; }
+x() {
+  d3_xfconf xfce4-terminal "$1" "$2"
+  xfconf-query -c xfce4-terminal -p "$1" -t "$2" -s "$3" --create 2>/dev/null || {
+    xfconf-query -c xfce4-terminal -p "$1" -r 2>/dev/null || true
+    xfconf-query -c xfce4-terminal -p "$1" -t "$2" -s "$3" --create
+  }
+}
+x /font-name string "$D3_FONTE_MONO 11"
+x /font-use-system bool false
+x /misc-always-show-tabs bool false
+x /misc-bell bool false
+x /misc-borders-default bool true
+x /misc-cursor-blinks bool true
+x /misc-cursor-shape string TERMINAL_CURSOR_SHAPE_BLOCK
+x /misc-default-geometry string 92x26
+x /misc-menubar-default bool false
+x /misc-mouse-autohide bool true
+x /misc-toolbar-default bool false
+x /misc-confirm-close bool false
+x /misc-cycle-tabs bool true
+x /misc-tab-close-buttons bool true
+x /misc-tab-close-middle-click bool true
+x /misc-tab-position string GTK_POS_TOP
+x /misc-highlight-urls bool true
+x /misc-rewrap-on-resize bool true
+x /misc-slim-tabs bool true
+x /misc-show-unsafe-paste-dialog bool false
+x /scrolling-unlimited bool true
+x /background-mode string TERMINAL_BACKGROUND_TRANSPARENT
+x /background-darkness double 0.88
+x /color-use-theme bool false
+x /color-foreground string "#dcdfe4"
+x /color-background string "#1d1f21"
+x /color-cursor string "#dcdfe4"
+x /color-selection string "#3f4451"
+x /color-selection-use-default bool false
+x /color-bold string "#ffffff"
+x /color-bold-use-default bool false
+x /color-palette string "#282c34;#e06c75;#98c379;#e5c07b;#61afef;#c678dd;#56b6c2;#abb2bf;#5c6370;#ef596f;#89ca78;#e5c07b;#61afef;#d55fde;#2bbac5;#ffffff"
+echo "xfce4-terminal com $D3_FONTE_MONO 11 e fundo translucido"
+echo "atencao: janelas do terminal ja abertas so mudam depois de fechar todas"
+'''

@@ -1,4 +1,4 @@
-"""Linha de comando do d3bian-init-bigsur-xfce.
+"""Linha de comando do d3bian-init-bigsur-minimalista-xfce.
 
 Sem argumento nenhum ele faz o que a maioria quer: pede a senha uma vez e abre
 o painel no navegador. Os subcomandos existem para quem prefere terminal, e
@@ -148,25 +148,35 @@ def cmd_capturar(args) -> int:
 
 
 def cmd_restaurar(args) -> int:
+    from . import desfazer
+    if args.apagar:
+        previa = desfazer.previa_remocao()
+        print("  com --apagar, tambem sera apagado:")
+        if previa["pacotes"]:
+            print(f"    pacotes desinstalados com apt: {', '.join(previa['pacotes'])}")
+        for pasta in previa["pastas_do_projeto"]:
+            print(f"    {pasta}")
+        for item in previa["ficam"]:
+            print(f"    fica: {item['nome']} ({item['motivo']})")
     if not args.sim:
-        print("  isto devolve os arquivos guardados antes das alteracoes.")
-        print("  confirme com: d3bian-init-bigsur-xfce restaurar --sim")
+        print("  isto volta a maquina ao que era antes: desfaz o que as receitas declaram e o")
+        print("  diario de alteracoes." + ("" if args.apagar else " Pacotes instalados ficam (--apagar remove)."))
+        print("  confirme com: d3bian-init-bigsur-minimalista-xfce restaurar --sim" + (" --apagar" if args.apagar else ""))
         return 1
     garantir_sudo()
-    feitos = estado.restaurar_tudo()
-    estado.limpar_marcas()
-    print(f"  {len(feitos)} arquivo(s) restaurado(s)")
-    print("  encerre a sessao e entre de novo para completar")
-    return 0
+    falhas = desfazer.executar(lambda texto: print(texto), apagar=args.apagar)
+    print("\n  pronto; encerre a sessao e entre de novo para completar" if not falhas
+          else f"\n  {falhas} problema(s); veja as linhas acima")
+    return 1 if falhas else 0
 
 
 # --------------------------------------------------------------------------
 
 def construir() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="d3bian-init-bigsur-xfce",
+        prog="d3bian-init-bigsur-minimalista-xfce",
         description="Prepara e ajusta um Debian com XFCE por uma pagina local.")
-    p.add_argument("--versao", action="version", version=f"d3bian-init-bigsur-xfce {VERSAO}")
+    p.add_argument("--versao", action="version", version=f"d3bian-init-bigsur-minimalista-xfce {VERSAO}")
     sub = p.add_subparsers(dest="comando")
 
     w = sub.add_parser("web", help="abre o painel no navegador (padrao)")
@@ -203,7 +213,9 @@ def construir() -> argparse.ArgumentParser:
     k.add_argument("--espera", type=int, default=5)
     k.set_defaults(func=cmd_capturar)
 
-    r = sub.add_parser("restaurar", help="desfaz, devolvendo os arquivos guardados")
+    r = sub.add_parser("restaurar", help="volta a maquina ao que era antes do projeto")
+    r.add_argument("--apagar", action="store_true",
+                   help="remove tambem os pacotes que o projeto instalou e as pastas do projeto")
     r.add_argument("--sim", action="store_true", help="confirma")
     r.set_defaults(func=cmd_restaurar)
 

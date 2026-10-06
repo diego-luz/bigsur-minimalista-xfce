@@ -13,9 +13,11 @@ tolera_falha = true
 corpo = '''
 for k in '<Super>Left' '<Super>Right' '<Super>Up' '<Super>Down' \
          '<Super>1' '<Super>2' '<Super>3' '<Super>4' '<Super>f'; do
+  d3_xfconf xfce4-keyboard-shortcuts "/xfwm4/custom/$k" string
   xfconf-query -c xfce4-keyboard-shortcuts -p "/xfwm4/custom/$k" -r 2>/dev/null || true
 done
 for k in '<Super>c' '<Super>x' '<Super>z' '<Super><Shift>Left' '<Super><Shift>Right'; do
+  d3_xfconf xfce4-keyboard-shortcuts "/commands/custom/$k" string
   xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/$k" -r 2>/dev/null || true
 done
 for f in d3bian-janelas d3bian-layouts d3bian-bordas; do
@@ -90,7 +92,7 @@ tipo = "script"
 se = "janelas == sim"
 dizer = "afinando o encaixe e definindo os atalhos"
 corpo = '''
-set_wm(){ xfconf-query -c xfwm4 -p "$1" -n -t "$2" -s "$3" 2>/dev/null \
+set_wm(){ d3_xfconf xfwm4 "$1" "$2"; xfconf-query -c xfwm4 -p "$1" -n -t "$2" -s "$3" 2>/dev/null \
           || xfconf-query -c xfwm4 -p "$1" -s "$3"; }
 set_wm /general/snap_to_border  bool true
 set_wm /general/snap_to_windows bool true
@@ -99,7 +101,7 @@ set_wm /general/tile_on_move    bool true
 set_wm /general/easy_click      string Alt
 set_wm /general/cycle_preview   bool true
 
-atalho(){ xfconf-query -c xfce4-keyboard-shortcuts -p "$1" -n -t string -s "$2" 2>/dev/null \
+atalho(){ d3_xfconf xfce4-keyboard-shortcuts "$1" string; xfconf-query -c xfce4-keyboard-shortcuts -p "$1" -n -t string -s "$2" 2>/dev/null \
           || xfconf-query -c xfce4-keyboard-shortcuts -p "$1" -s "$2"; }
 atalho '/xfwm4/custom/<Super>Left'  tile_left_key
 atalho '/xfwm4/custom/<Super>Right' tile_right_key

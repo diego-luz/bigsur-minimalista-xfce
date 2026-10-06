@@ -18,7 +18,7 @@ from . import (caminhos, capturas, config, estado, papeis, programas,
                receitas, sistema)
 from .tarefa import Tarefa
 
-PORTA_PADRAO = 8730
+PORTA_PADRAO = 8974
 
 TIPOS = {
     ".html": "text/html; charset=utf-8",
@@ -35,7 +35,7 @@ parar = threading.Event()
 
 
 class Painel(BaseHTTPRequestHandler):
-    server_version = "d3bian-init-bigsur-xfce"
+    server_version = "d3bian-init-bigsur-minimalista-xfce"
 
     def log_message(self, *_a) -> None:
         pass
@@ -101,6 +101,11 @@ class Painel(BaseHTTPRequestHandler):
             self.json({"verificacoes": lista, "impedimentos": sistema.impedimentos(lista)})
             return
 
+        if rota == "/api/desfazer/previa":
+            from . import desfazer
+            self.json(desfazer.previa_remocao())
+            return
+
         if rota == "/api/progresso":
             try:
                 desde = int(self.path.split("desde=")[1].split("&")[0])
@@ -114,12 +119,13 @@ class Painel(BaseHTTPRequestHandler):
             return
 
         if rota == "/api/papeis":
-            atual = papeis.escolhido(config.ler())
+            # por nome: antes do download a galeria mostra as miniaturas do pacote
+            atual = papeis.nome_escolhido(config.ler())
             # o esquema da pagina precisa saber o que "do tema" escolheria
-            do_tema = {t: (papeis.escolhido({"tema": t, "papel_de_parede": "do-tema"})
-                           or Path("")).stem for t in ("escuro", "claro")}
+            do_tema = {t: papeis.nome_escolhido({"tema": t, "papel_de_parede": "do-tema"}) or ""
+                       for t in ("escuro", "claro")}
             self.json({"papeis": papeis.disponiveis(), "doTema": do_tema,
-                       "emUso": atual.stem if atual else ""})
+                       "baixados": papeis.baixados(), "emUso": atual or ""})
             return
 
 
@@ -175,6 +181,15 @@ class Painel(BaseHTTPRequestHandler):
             return
         if rota == "/api/instalar":
             self._instalar_tudo(corpo)
+            return
+        if rota == "/api/desfazer":
+            from . import desfazer
+            apagar = bool(corpo.get("apagar"))
+            iniciado = tarefa.funcao("Desfazendo" + (" e apagando" if apagar else ""),
+                                     lambda diz: desfazer.executar(diz, apagar))
+            self.json({"iniciado": iniciado, "motivo": "" if iniciado else "ocupado",
+                       "etapas": [{"id": i, "nome": n} for i, n in desfazer.etapas(apagar)]},
+                      200 if iniciado else 409)
             return
         if rota == "/api/programas/instalar":
             self._programas(corpo, remover=False)
@@ -333,7 +348,7 @@ def subir(porta: int = PORTA_PADRAO, abrir: bool = True) -> int:
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
     endereco = f"http://127.0.0.1:{porta}/"
-    print(f"\n  d3bian-init-bigsur-xfce aberto em {endereco}")
+    print(f"\n  d3bian-init-bigsur-minimalista-xfce aberto em {endereco}")
     print("  Feche pelo botao na pagina, ou com Ctrl+C aqui.\n")
     if abrir:
         try:

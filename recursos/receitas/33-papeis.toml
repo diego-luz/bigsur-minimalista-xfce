@@ -15,6 +15,7 @@ tipo = "script"
 dizer = "copiando os papeis de parede"
 corpo = '''
 destino="$HOME/.local/share/backgrounds/WhiteSur"
+d3_antes "$destino"
 mkdir -p "$destino"
 find "$D3_FONTES/WhiteSur-wallpapers" -type f \( -iname '*.jpg' -o -iname '*.png' \) \
      ! -iname 'preview-*' ! -ipath '*4k*' -exec cp -f {} "$destino/" \; 2>/dev/null || true

@@ -25,8 +25,8 @@ def _xdg(variavel: str, padrao: str) -> Path:
     return base
 
 
-CONFIG_DIR = _xdg("XDG_CONFIG_HOME", ".config") / "d3bian-init"
-ESTADO_DIR = _xdg("XDG_STATE_HOME", ".local/state") / "d3bian-init"
+CONFIG_DIR = _xdg("XDG_CONFIG_HOME", ".config") / "d3bian-init-bigsur-minimalista"
+ESTADO_DIR = _xdg("XDG_STATE_HOME", ".local/state") / "d3bian-init-bigsur-minimalista"
 DADOS_DIR = _xdg("XDG_DATA_HOME", ".local/share") / "d3bian-init"
 
 CONFIG = CONFIG_DIR / "config.json"

@@ -1,17 +1,12 @@
 [modulo]
 id = "38"
 nome = "painel"
-titulo = "Barra do topo, estilo macOS"
+titulo = "Barra unica do topo, estilo macOS"
 requer = ["10"]
-afetada_por = ["tema", "logo", "menu_global", "titulo_no_painel"]
+afetada_por = ["tema", "logo"]
 
 # Roda antes da aparencia de proposito: este passo reinicia o xfconfd, e um
 # ajuste gravado por outra receita logo antes correria o risco de se perder.
-
-[[passo]]
-tipo = "apt"
-se = "titulo_no_painel == sim"
-pacotes = ["xfce4-windowck-plugin"]
 
 [[passo]]
 tipo = "script"
@@ -20,33 +15,26 @@ corpo = '''
 xml="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
 mkdir -p "$(dirname "$xml")"
 
-# menu global: so entra se o plugin existir
-appmenu=""
-if [ "$D3_MENU_GLOBAL" = "sim" ]; then
-  for f in /usr/share/xfce4/panel/plugins/*appmenu*.desktop; do
-    [ -f "$f" ] && appmenu="$(basename "$f" .desktop)" && break
-  done
-  [ -n "$appmenu" ] || echo "plugin de menu global ausente, barra montada sem ele"
+# a barra de antes, inteira e uma vez so: o [[desfazer]] devolve com
+# xfce4-panel-profiles load, que tambem traz os arquivos dos plugins
+antes="$D3_ESTADO_DIR/painel-antes.tar.bz2"
+if [ ! -f "$antes" ] && command -v xfce4-panel-profiles >/dev/null; then
+  mkdir -p "$D3_ESTADO_DIR"
+  xfce4-panel-profiles save "$antes" >/dev/null 2>&1 || echo "atencao: nao consegui guardar a barra de antes"
 fi
 
-# titulo e botoes da janela maximizada dentro da barra. O id do plugin e o
-# nome do .desktop, que nao segue o nome do pacote: os botoes sao wckbuttons e
-# o titulo e windowck-plugin. Um id que nao existe faz o painel abrir a janela
-# "plugin nao pode ser carregado" na frente do usuario, entao confere um a um
-wck=""
-if [ "$D3_TITULO_NO_PAINEL" = "sim" ]; then
-  for p in wckbuttons windowck-plugin; do
-    if [ -f "/usr/share/xfce4/panel/plugins/$p.desktop" ]; then
-      wck="$wck $p"
-    else
-      echo "plugin $p ausente, barra montada sem ele"
-    fi
-  done
-fi
+# uma barra so, com o essencial: menu, bandeja, som, bateria, relogio e sair
+# o logo do menu vai para a maquina: o caminho de dentro do pacote some
+# quando o programa rodou de um pendrive
+logo_dir="$(dirname "$D3_LOGO_ARQUIVO")"
+[ -d "$logo_dir" ] || d3_pasta "$logo_dir"
+[ -e "$D3_LOGO_ARQUIVO" ] || d3_criado "$D3_LOGO_ARQUIVO"
+install -Dm644 "$D3_LOGO_ORIGEM" "$D3_LOGO_ARQUIVO"
 
-plugins="whiskermenu$wck"
-[ -n "$appmenu" ] && plugins="$plugins $appmenu"
-plugins="$plugins separador-expande systray separador pulseaudio separador power-manager-plugin separador clock separador actions"
+plugins="whiskermenu separador-expande systray separador pulseaudio separador power-manager-plugin separador clock separador actions"
+# o plugin de energia esconde o icone proprio do xfce4-power-manager ao entrar
+# na barra; anotado para o desfazer devolver como era
+d3_xfconf xfce4-power-manager /xfce4-power-manager/show-tray-icon bool
 
 set -- $D3_PAINEL_FUNDO
 pr="$1"; pg="$2"; pb="$3"; pa="$4"
@@ -176,7 +164,7 @@ echo "barra montada com: $plugins"
 tipo = "bloco"
 dizer = "cor do texto e folga entre os itens da barra"
 destino = "~/.config/gtk-3.0/gtk.css"
-marca = "d3bian-init painel"
+marca = "d3bian-init-minimalista painel"
 conteudo = '''
 /* O WhiteSur pinta o texto da barra sempre de branco, e a opcao de modo
    claro do painel nao muda isso. Sem esta regra, barra clara fica ilegivel. */
@@ -186,4 +174,18 @@ conteudo = '''
 .xfce4-panel.background image { color: @@painel_texto@@; }
 .xfce4-panel button,
 .xfce4-panel widget { padding-left: 5px; padding-right: 5px; }
+'''
+
+[[desfazer]]
+tipo = "script"
+dizer = "devolvendo a barra de antes"
+tolera_falha = true
+corpo = '''
+antes="$D3_ESTADO_DIR/painel-antes.tar.bz2"
+if [ -f "$antes" ] && command -v xfce4-panel-profiles >/dev/null; then
+  xfce4-panel-profiles load "$antes" >/dev/null 2>&1 && echo "barra de antes carregada" \
+    || echo "atencao: o xfce4-panel-profiles nao carregou a barra de antes"
+else
+  echo "atencao: sem copia da barra de antes; ela fica como esta"
+fi
 '''

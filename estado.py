@@ -58,7 +58,7 @@ def copia_de_seguranca(alvo: Path) -> bool:
     """Guarda o arquivo ou pasta antes de mexer, preservando a arvore.
 
     So guarda a primeira versao: o objetivo e poder voltar ao estado anterior
-    ao d3bian-init-bigsur-xfce, nao ter historico de cada execucao.
+    ao d3bian-init-bigsur-minimalista-xfce, nao ter historico de cada execucao.
     """
     alvo = Path(alvo).expanduser()
     if not alvo.exists():

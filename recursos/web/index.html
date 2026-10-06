@@ -1,10 +1,10 @@
-<title>d3bian-init-bigsur-xfce</title>
+<title>d3bian-init-bigsur-minimalista-xfce</title>
 <link rel="stylesheet" href="estilo.css">
 <script src="comum.js"></script>
 
-<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init-bigsur-xfce <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
+<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init-bigsur-minimalista-xfce <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
 
-<h1>d3bian-init-bigsur-xfce</h1>
+<h1>d3bian-init-bigsur-minimalista-xfce</h1>
 <p class="caminho">/</p>
 <p class="sub">Painel local para preparar e ajustar este Debian. Escolha por onde começar.</p>
 
@@ -16,8 +16,8 @@
   <a class="porta" href="aparencia.html">
     <div class="ico">🎨</div>
     <h3>Aparência do desktop</h3>
-    <p>Tema claro ou escuro, barra de menus no topo, dock, widget na área de trabalho,
-       encaixe de janelas e efeitos. Com prévia da sua própria tela.</p>
+    <p>Cara de macOS com o mínimo de peças: tema claro ou escuro, uma barra só no topo,
+       encaixe de janelas e tela de login combinando. Sem dock, sem widget e sem menu global.</p>
     <div class="seta">Abrir &rarr;</div>
   </a>
 
@@ -32,21 +32,19 @@
 
 <p class="rodape">
   Esta página roda no seu computador, em <code>127.0.0.1</code>, e não fica acessível pela
-  rede. Tudo que ela faz também dá pelo terminal, com <code>d3bian-init-bigsur-xfce --help</code>.
+  rede. Tudo que ela faz também dá pelo terminal, com <code>d3bian-init-bigsur-minimalista-xfce --help</code>.
   A senha de administrador é digitada no terminal que abriu o painel, nunca aqui.
 </p>
 
 <div class="rodape creditos">
-  <p><b>Créditos.</b> O visual é inspirado no macOS Big Sur e montado com trabalho de outras
-     pessoas. O d3bian-init-bigsur-xfce só baixa, instala e ajusta.</p>
+  <p><b>Créditos.</b> O visual é inspirado no macOS Big Sur, na versão enxuta, e montado com
+     trabalho de outras pessoas. O d3bian-init-bigsur-minimalista-xfce só baixa, instala e ajusta.</p>
   <ul>
     <li>Temas <a href="https://github.com/vinceliuice/WhiteSur-gtk-theme" target="_blank" rel="noopener">WhiteSur</a>
         (GTK, ícones, cursores, papéis de parede, KDE/Kvantum e Firefox), de vinceliuice</li>
-    <li>Temas do lançador <a href="https://github.com/adi1090x/rofi" target="_blank" rel="noopener">rofi</a>, de adi1090x</li>
-    <li>Dock <a href="https://github.com/zquestz/plank-reloaded" target="_blank" rel="noopener">Plank Reloaded</a>, de zquestz</li>
-    <li>Widget de anéis adaptado do <a href="https://github.com/MX-Linux/mx-conky-data/tree/master/MX-CoreBlue" target="_blank" rel="noopener">MX-CoreBlue</a>
-        (MX Linux), visto no <a href="https://www.opencode.net/lsteam/xfce-big-sur-setup-file" target="_blank" rel="noopener">setup Xfce Big Sur</a> do lsteam</li>
-    <li>XFCE, LightDM, picom, Conky e os demais pacotes vêm do repositório oficial do Debian</li>
+    <li>A mesma pegada do <a href="https://plus.diolinux.com.br/t/void-xfce-minimalista/74056" target="_blank" rel="noopener">Xfce minimalista</a>
+        publicado no Diolinux Plus: visual de Mac com poucas peças na tela</li>
+    <li>XFCE, LightDM e os demais pacotes vêm do repositório oficial do Debian</li>
   </ul>
   <p>Não tem relação com a Apple. macOS e Big Sur são marcas da Apple Inc.; Debian é marca
      da Software in the Public Interest; Mr. Robot é marca da NBCUniversal.</p>
@@ -56,21 +54,8 @@
   <button class="bt sec" id="btSair">Encerrar o painel</button>
 </div>
 
-<!-- easter egg: a mascara da fsociety, de Mr. Robot. So enfeite, entao fica
-     fora do leitor de tela -->
-<div class="amigo" aria-hidden="true" title="fsociety">
-  <svg viewBox="0 0 64 80">
-    <path d="M32 3C50 3 58 15 58 33C58 55 46 77 32 77C18 77 6 55 6 33C6 15 14 3 32 3Z"
-          fill="#e8e2d4" stroke="#b9b09c" stroke-width="1"/>
-    <circle cx="15" cy="47" r="6" fill="#e0707a" opacity=".22"/>
-    <circle cx="49" cy="47" r="6" fill="#e0707a" opacity=".22"/>
-    <path d="M12 28Q19 18 28 25M36 25Q45 18 52 28" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/>
-    <path d="M15 33Q21 29 27 33Q21 36 15 33ZM37 33Q43 29 49 33Q43 36 37 33Z" fill="#111"/>
-    <path d="M32 35L29 46Q32 48 35 46" fill="none" stroke="#9d937e" stroke-width="1.5" stroke-linecap="round"/>
-    <path d="M32 52C27 48 19 48 14 54C12 56 10 54 11 52C13 56 22 55 32 55C42 55 51 56 53 52C54 54 52 56 50 54C45 48 37 48 32 52Z" fill="#111"/>
-    <path d="M20 60Q32 68 45 58" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>
-    <path d="M30 70Q32 71 34 70" fill="none" stroke="#9d937e" stroke-width="1.5" stroke-linecap="round"/>
-  </svg>
+<!-- easter egg: so a frase, digitando. Enfeite, entao fica fora do leitor de tela -->
+<div class="amigo" aria-hidden="true">
   <span class="amigo-texto" id="amigo" lang="en">Hello, friend.</span>
 </div>
 
@@ -127,7 +112,7 @@ $("#btSair").addEventListener("click", async () => {
   cx.style.cssText = "text-align:center;padding:90px 20px";
   const h = document.createElement("h1"); h.textContent = "Painel encerrado";
   const p = document.createElement("p"); p.className = "sub";
-  p.textContent = "Pode fechar esta aba. Para abrir de novo, rode d3bian-init-bigsur-xfce no terminal.";
+  p.textContent = "Pode fechar esta aba. Para abrir de novo, rode d3bian-init-bigsur-minimalista-xfce no terminal.";
   cx.appendChild(h); cx.appendChild(p); document.body.appendChild(cx);
 });
 </script>

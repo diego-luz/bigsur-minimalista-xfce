@@ -1,5 +1,5 @@
 /* ===========================================================================
-   d3bian-init-bigsur-xfce - pecas comuns das paginas
+   d3bian-init-bigsur-minimalista-xfce - pecas comuns das paginas
    - faixa de estado do topo
    - Terminal: painel fixo no rodape que acompanha a tarefa do servidor, com
      etapas, progresso, log e um quadro claro quando termina
@@ -26,7 +26,7 @@ const duracao = segundos => segundos < 60 ? `${Math.max(1, segundos | 0)} s` : `
 
 // o nome da verificacao nao diz o que fazer; a faixa precisa dizer
 const O_QUE_FAZER = {
-  "Permissao de administrador": "abra o painel pelo comando d3bian-init-bigsur-xfce",
+  "Permissao de administrador": "abra o painel pelo comando d3bian-init-bigsur-minimalista-xfce",
   "Acesso aos repositorios": "sem acesso aos repositórios do Debian",
   "Sistema": "este sistema não é Debian",
   "Ambiente grafico": "precisa do XFCE",
@@ -399,7 +399,7 @@ const Terminal = (() => {
     q.appendChild(acoes);
 
     // quem estiver em outra aba ve o resultado no titulo
-    document.title = (r.bom ? "✓ " : "✗ ") + r.titulo + " · d3bian-init-bigsur-xfce";
+    document.title = (r.bom ? "✓ " : "✗ ") + r.titulo + " · d3bian-init-bigsur-minimalista-xfce";
     if (q.open) q.close();
     q.showModal();
     ok.focus();

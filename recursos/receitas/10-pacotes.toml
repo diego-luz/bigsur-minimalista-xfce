@@ -25,8 +25,7 @@ pacotes = ["gtk2-engines-murrine", "gnome-themes-extra", "libglib2.0-bin"]
 [[passo]]
 tipo = "apt"
 dizer = "componentes do desktop"
-pacotes = ["rofi", "picom", "conky-all", "xfce4-panel-profiles",
-           "xfce4-whiskermenu-plugin", "xfce4-screenshooter"]
+pacotes = ["xfce4-panel-profiles", "xfce4-whiskermenu-plugin", "xfce4-screenshooter"]
 
 [[passo]]
 tipo = "apt"

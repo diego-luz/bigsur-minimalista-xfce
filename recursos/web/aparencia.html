@@ -1,8 +1,8 @@
-<title>Aparência - d3bian-init-bigsur-xfce</title>
+<title>Aparência - d3bian-init-bigsur-minimalista-xfce</title>
 <link rel="stylesheet" href="estilo.css">
 <script src="comum.js"></script>
 
-<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init-bigsur-xfce <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
+<div class="estado"><span class="viva"></span><span id="ePronto">verificando</span><span>host: <b id="eDistro">…</b></span><span>ambiente: <b id="eDesktop">…</b></span><span class="dir"><span>d3bian-init-bigsur-minimalista-xfce <b>v0.1.0</b></span><span>ativo: <b id="eTempo">00:00</b></span><span id="eSit">[ verificando ]</span></span></div>
 
 <a class="voltar" href="/"><span aria-hidden="true">&larr;</span> Voltar ao início</a>
 <h1>Aparência do desktop</h1>
@@ -13,7 +13,7 @@
   <h2>Primeira instalação</h2>
   <p style="margin:0 0 12px;color:var(--fraco)">
     Esta máquina ainda não foi preparada. A instalação baixa os temas, compila o tema
-    das janelas e configura a barra, o dock e a tela de login. Leva de 15 a 25 minutos,
+    das janelas e configura a barra do topo e a tela de login. Leva de 15 a 25 minutos,
     e a maior parte é a compilação.
   </p>
   <details class="verif" id="verif">
@@ -42,8 +42,6 @@
         <div class="esquema" id="esquema" aria-label="Esquema do desktop com as opções escolhidas">
           <div class="e-barra">
             <span class="e-logo"><img id="eLogo" alt=""></span>
-            <span class="e-menu" id="eMenu"><b>Arquivos</b><span>Arquivo</span><span>Editar</span><span>Ver</span></span>
-            <span class="e-titulo" id="eTitulo">Imagens</span>
             <span class="e-dir"><span>21:04</span><span>◍</span></span>
           </div>
           <div class="e-encaixe" id="eEncaixe"><span>arraste para a borda: metade da tela</span></div>
@@ -68,22 +66,6 @@
               </div>
             </div>
           </div>
-          <div class="e-widget" id="eWidget">
-            <div class="e-hora">21:04</div>
-            <div class="e-sub">sábado, 12 de setembro</div>
-            <div class="e-med">
-              <div class="e-bar" style="width:70%"></div>
-              <div class="e-bar" style="width:45%"></div>
-              <div class="e-bar" style="width:60%"></div>
-            </div>
-          </div>
-          <div class="e-dock" id="eDock">
-            <span class="e-app" style="background:#4a90e2"></span>
-            <span class="e-app" style="background:#50b83c"></span>
-            <span class="e-app" style="background:#f5a623"></span>
-            <span class="e-app" style="background:#bd10e0"></span>
-            <span class="e-app" style="background:#3a3a3c"></span>
-          </div>
         </div>
         <p class="e-nota">
           Muda na hora a cada opção. Em Foto da tela há uma imagem de verdade, e cada
@@ -92,7 +74,7 @@
       </div>
 
       <div id="painelFoto" hidden>
-        <img id="img" alt="Prévia do desktop" src="/capturas/escuro-com-widget.jpg">
+        <img id="img" alt="Prévia do desktop" src="/capturas/escuro.jpg">
         <div class="semfoto" id="semfoto" hidden>
           Ainda não há prévia para esta combinação.<br>
           Use os botões abaixo para fotografar a sua tela.
@@ -167,12 +149,39 @@
   </div>
 </div>
 
+<!-- desfaz pelo desfazer.py; so aparece quando alguma etapa ja rodou -->
+<div class="cartao" style="margin-top:20px" id="cartaoDesfazer" hidden>
+  <h2>Voltar ao que era antes</h2>
+  <p style="margin:0;color:var(--fraco);font-size:13px">
+    Não gostou? Isto desfaz o que as etapas mudaram: temas, ícones e arquivos criados saem, arquivos que
+    já existiam voltam da cópia de segurança e configurações voltam ao valor de antes. Os pacotes
+    instalados ficam, a não ser que você marque a opção abaixo. O visual antigo aparece por completo depois de encerrar a sessão; a tela de login, depois de reiniciar o LightDM.
+  </p>
+  <label class="opcao-apagar">
+    <input type="checkbox" id="apagarInstalado">
+    <span><b>Remover também o que foi instalado</b>
+      <span class="dica">Desinstala com o apt os pacotes que o projeto instalou e apaga as opções, o log,
+      as cópias de segurança e os downloads do projeto. O que já existia na máquina fica.</span></span>
+  </label>
+  <div class="aviso erro" id="listaApagar" hidden></div>
+  <div class="aviso erro" id="confirmaDesfazer" hidden role="alert">
+    <b id="confirmaTitulo">Voltar ao que era antes?</b>
+    <div class="acoes" style="margin-top:10px">
+      <button class="bt pri" id="btDesfazerSim">Sim, voltar</button>
+      <button class="bt sec" id="btDesfazerNao">Cancelar</button>
+    </div>
+  </div>
+  <div class="acoes">
+    <button class="bt sec" id="btDesfazer">Voltar ao que era antes</button>
+  </div>
+</div>
+
 <script>
 const $ = s => document.querySelector(s);
-let estado = {}, salvo = {}, opcoes = [], receitas = [], instalado = true, previa = "escuro-com-widget";
+let estado = {}, salvo = {}, opcoes = [], receitas = [], instalado = true, previa = "escuro";
 let retomou = false;
 const BOTOES = ["#btAplicar", "#btAplicarLogin", "#btCapturar", "#btCapturarTodas",
-                "#btLogin", "#btReiniciarLogin", "#btInstalar", "#btRever"];
+                "#btLogin", "#btReiniciarLogin", "#btInstalar", "#btRever", "#btDesfazer", "#btDesfazerSim"];
 const APLICAR = ["#btAplicar", "#btAplicarLogin"];
 // imagens de exemplo por opcao, do pacote: {chave: {valor: arquivo}}
 let EXEMPLOS = null;
@@ -247,12 +256,12 @@ const NOMES = {sim: "Com", nao: "Sem", claro: "Claro", escuro: "Escuro",
 const NOMES_POR_CHAVE = {
   bloqueio: {nao: "Nunca", 5: "5 minutos", 10: "10 minutos", 15: "15 minutos", 30: "30 minutos"},
   login_desfoque: {sim: "Desfocado", nao: "Nítido"},
-  widget: {sim: "Simples", aneis: "Anéis", nao: "Sem"},
 };
 const rotulo = (v, chave) =>
   (NOMES_POR_CHAVE[chave] || {})[v] || NOMES[v] || v[0].toUpperCase() + v.slice(1);
 
 let papeis = [];
+let baixados = true;
 
 function desenharGaleria(){
   galeria("#galeria", "#papeis", "papel_de_parede",
@@ -263,9 +272,10 @@ function desenharGaleria(){
 
 function galeria(moldura, seletor, chave, especiais){
   const caixa = $(seletor);
-  // As imagens so existem depois que a receita 33 baixa o repositorio. Antes
-  // disso a galeria continua visivel, com as escolhas que nao dependem delas e
-  // um aviso, senao a opcao some sem explicacao na primeira execucao
+  // As imagens so chegam com a receita 33. Antes disso a galeria mostra as
+  // miniaturas que vem no pacote; a escolha fica guardada pelo nome e a
+  // aparencia aplica o arquivo baixado com esse nome. Sem miniaturas no
+  // pacote, fica o aviso, senao a opcao some sem explicacao
   $(moldura).hidden = false;
   caixa.textContent = "";
 
@@ -278,14 +288,18 @@ function galeria(moldura, seletor, chave, especiais){
     caixa.appendChild(b);
   });
 
-  if (!papeis.length){
+  if (!papeis.length || !baixados){
     const aviso = document.createElement("p");
     aviso.className = "dica";
     aviso.style.gridColumn = "1 / -1";
     aviso.style.margin = "4px 2px 0";
-    aviso.textContent = instalado
-      ? "Nenhum papel de parede encontrado. Reaplique a etapa de papéis de parede para baixá-los."
-      : "As imagens para escolher aparecem aqui depois da instalação. Até lá, o tema escolhe um combinando.";
+    aviso.textContent = !papeis.length
+      ? (instalado
+        ? "Nenhum papel de parede encontrado. Reaplique a etapa de papéis de parede para baixá-los."
+        : "As imagens para escolher aparecem aqui depois da instalação. Até lá, o tema escolhe um combinando.")
+      : instalado
+        ? "As imagens ainda não estão na máquina. Reaplique a etapa de papéis de parede para baixá-las; a escolha fica guardada."
+        : "As imagens são baixadas durante a instalação, e a que você escolher aqui já entra no fim.";
     caixa.appendChild(aviso);
   }
 
@@ -323,18 +337,13 @@ function fundoDoEsquema(){
 function desenharEsquema(){
   const e = $("#esquema");
   e.classList.toggle("claro", estado.tema === "claro");
-  e.classList.toggle("arred", estado.efeitos === "sim");
   // a imagem vem por cima de um degrade, que aparece se ela nao carregar
   const fundo = fundoDoEsquema();
   e.style.setProperty("--e-img", fundo ? `url("${fundo}")` : "none");
   e.style.setProperty("--e-acento", DESTAQUE[estado.destaque] || DESTAQUE.padrao);
   e.style.fontFamily = estado.fonte_interface === "sf-pro"
     ? '"SF Pro Display", Inter, system-ui, sans-serif' : 'Inter, system-ui, sans-serif';
-  $("#eMenu").hidden    = estado.menu_global !== "sim";
-  $("#eTitulo").hidden  = estado.titulo_no_painel !== "sim";
   $("#eEncaixe").hidden = estado.janelas !== "sim";
-  $("#eWidget").hidden  = estado.widget === "nao";
-  $("#eDock").hidden    = estado.dock !== "sim";
   const cor = estado.tema === "escuro" ? "claro" : "escuro";
   const logo = estado.logo || "debian";
   const arq = logo.endsWith("-cor") ? `${logo}.svg` : `${logo}-${cor}.svg`;
@@ -356,13 +365,12 @@ function desenhar(){
   desenharGaleria();
   desenharMudancas();
   const tema = estado.tema === "claro" ? "claro" : "escuro";
-  const w = estado.widget === "nao" ? "sem" : "com";
-  previa = `${tema}-${w}-widget`;
+  previa = tema;
   const img = $("#img");
   img.onerror = () => { img.hidden = true; $("#semfoto").hidden = false; };
   img.onload  = () => { img.hidden = false; $("#semfoto").hidden = true; };
   img.src = `/capturas/${previa}.jpg?t=${Date.now()}`;
-  $("#legenda").textContent = `Tema ${tema}, ${w} widget`;
+  $("#legenda").textContent = `Tema ${tema}`;
   $("#origem").textContent = proprias.includes(previa) ? "Foto desta máquina" : "Imagem de exemplo";
 }
 
@@ -446,6 +454,7 @@ function etapasDoRotulo(rotulo){
 function tituloDoRotulo(rotulo){
   const r = rotulo || "";
   if (/^Instalacao/.test(r)) return "Instalação completa";
+  if (/^Desfazendo/.test(r)) return "Voltando ao que era antes";
   if (/^Reaplicando/.test(r)) return "Reaplicando a aparência";
   if (/^Aplicando/.test(r)) return "Aplicando a aparência";
   if (/^Capturando/.test(r)) return "Capturando a tela";
@@ -500,12 +509,13 @@ async function carregar(){
   desenharEtapas();
   try {
     const p = await fetch("/api/papeis").then(r => r.json());
-    papeis = p.papeis || []; doTema = p.doTema || {};
+    papeis = p.papeis || []; doTema = p.doTema || {}; baixados = p.baixados !== false;
   } catch (e) { papeis = []; }
   desenharGaleria();
   desenharEsquema();
 
   $("#cartaoInstalar").hidden = instalado;
+  $("#cartaoDesfazer").hidden = !receitas.some(r => r.aplicada);
   APLICAR.forEach(sel => {
     ROTULOS[sel] = instalado ? "Aplicar" : "Aplicar (instale primeiro)";
   });
@@ -523,6 +533,7 @@ async function carregar(){
         await carregar();
         if (/^Instalacao/.test(rotuloRetomado)) return fimInstalar(codigo);
         if (/aplicando/i.test(rotuloRetomado)) return fimAplicar(/^Re/.test(rotuloRetomado), codigo);
+        if (/^Desfazendo/.test(rotuloRetomado)) return fimDesfazer(codigo);
         return null;
       },
     });
@@ -597,6 +608,75 @@ $("#btInstalar").addEventListener("click", async () => {
   });
 });
 
+// ---- voltar ao que era antes ----------------------------------------------
+
+function fimDesfazer(codigo){
+  if (codigo === 0) return {bom: true, titulo: "Máquina como era antes",
+    texto: "Encerre a sessão e entre de novo para tudo voltar ao visual de antes."};
+  if (codigo !== null) return {bom: false, titulo: "Voltou só em parte",
+    texto: `${codigo} problema(s). As linhas vermelhas do log mostram o que não deu.`};
+  return null;
+}
+
+// com a caixa marcada, a lista exata do que sai, antes de confirmar
+async function desenharPreviaApagar(){
+  const caixa = $("#listaApagar");
+  const apagar = $("#apagarInstalado").checked;
+  $("#confirmaTitulo").textContent = apagar
+    ? "Voltar ao que era antes e apagar o que foi instalado?" : "Voltar ao que era antes?";
+  $("#btDesfazerSim").textContent = apagar ? "Sim, voltar e apagar" : "Sim, voltar";
+  ROTULOS["#btDesfazerSim"] = $("#btDesfazerSim").textContent;
+  if (!apagar){ caixa.hidden = true; return; }
+  caixa.hidden = false;
+  caixa.textContent = "Conferindo o que o projeto instalou…";
+  let p;
+  try { p = await fetch("/api/desfazer/previa").then(r => r.json()); }
+  catch (e) { caixa.textContent = "Não consegui conferir o que seria apagado."; return; }
+  caixa.textContent = "";
+  const criarEl = (tag, texto) => { const e = document.createElement(tag); e.textContent = texto; return e; };
+  const lista = (titulo, itens) => {
+    if (!itens.length) return;
+    caixa.appendChild(criarEl("b", titulo));
+    const ul = document.createElement("ul");
+    itens.forEach(i => ul.appendChild(criarEl("li", i)));
+    caixa.appendChild(ul);
+  };
+  const sai = [];
+  if (p.pacotes.length) sai.push("Pacotes desinstalados com apt: " + p.pacotes.join(", "));
+  p.pastas_do_projeto.forEach(a => sai.push("Apagado: " + a + " (opções, log, cópias e downloads)"));
+  if (sai.length) lista("Será apagado", sai);
+  else caixa.appendChild(criarEl("b", "Nada instalado pelo projeto foi encontrado"));
+  lista("Fica instalado", p.ficam.map(f => `${f.nome}: ${f.motivo}`));
+  if (p.origem === "historico"){
+    const nota = criarEl("p", "Esta instalação é anterior ao diário de alterações; a lista de pacotes veio "
+      + "do histórico do apt, e só as cópias de segurança voltam.");
+    nota.className = "dica";
+    caixa.appendChild(nota);
+  }
+}
+$("#apagarInstalado").addEventListener("change", desenharPreviaApagar);
+
+$("#btDesfazer").addEventListener("click", () => {
+  $("#confirmaDesfazer").hidden = false;
+  $("#btDesfazerSim").focus();
+});
+$("#btDesfazerNao").addEventListener("click", () => { $("#confirmaDesfazer").hidden = true; });
+$("#btDesfazerSim").addEventListener("click", async () => {
+  $("#confirmaDesfazer").hidden = true;
+  travar(true, "#btDesfazer", "Voltando…");
+  const r = await pedir("/api/desfazer", {apagar: $("#apagarInstalado").checked});
+  if (!r.iniciado){
+    naoComecou(r.erro || (r.motivo === "ocupado"
+      ? "Já tem uma tarefa rodando. Espere terminar." : "Não consegui começar."));
+    return;
+  }
+  Terminal.acompanhar({
+    titulo: "Voltando ao que era antes",
+    etapas: r.etapas || [],
+    aoTerminar: async codigo => { await carregar(); return fimDesfazer(codigo); },
+  });
+});
+
 $("#btRever").addEventListener("click", async e => {
   e.target.disabled = true; await desenharVerificacoes(); e.target.disabled = false;
 });
@@ -649,7 +729,7 @@ $("#btReiniciarLogin").addEventListener("click", async () => {
   const r = await pedir("/api/reiniciar-login", {confirmar: true});
   const motivos = {
     login_nao_aplicado: "A tela de login nova ainda não foi aplicada. Clique em Aplicar primeiro.",
-    sem_permissao: "Sem permissão de administrador. Abra o painel pelo comando d3bian-init-bigsur-xfce.",
+    sem_permissao: "Sem permissão de administrador. Abra o painel pelo comando d3bian-init-bigsur-minimalista-xfce.",
     ocupado: "Já tem uma tarefa rodando. Espere terminar.",
   };
   if (!r.iniciado){

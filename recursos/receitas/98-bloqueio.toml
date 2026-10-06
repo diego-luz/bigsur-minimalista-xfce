@@ -12,6 +12,14 @@ afetada_por = ["bloqueio"]
 # quando ele entra, com cinco segundos de folga para mexer o mouse. O
 # xfce4-power-manager 4.20 nao tem mais chave para esse tempo, dai o xset.
 
+# o valor de antes das chaves do light-locker que os dois lados mexem
+[[passo]]
+tipo = "script"
+tolera_falha = true
+corpo = '''
+for chave in lock-after-screensaver lock-on-suspend lock-on-lid; do d3_gsettings apps.light-locker "$chave"; done
+'''
+
 # ---- com bloqueio ----------------------------------------------------------
 
 [[passo]]
@@ -37,6 +45,13 @@ tipo = "comando"
 se = "bloqueio != nao"
 tolera_falha = true
 argumentos = ["gsettings", "set", "apps.light-locker", "lock-on-lid", "true"]
+
+[[passo]]
+tipo = "script"
+se = "bloqueio != nao"
+corpo = '''
+d3_xfconf xfce4-screensaver /lock/sleep-activation bool
+'''
 
 [[passo]]
 tipo = "xfconf"
@@ -99,6 +114,13 @@ tipo = "comando"
 se = "bloqueio == nao"
 tolera_falha = true
 argumentos = ["gsettings", "set", "apps.light-locker", "lock-on-suspend", "false"]
+
+[[passo]]
+tipo = "script"
+se = "bloqueio == nao"
+corpo = '''
+d3_xfconf xfce4-screensaver /lock/sleep-activation bool
+'''
 
 [[passo]]
 tipo = "xfconf"

@@ -3,6 +3,17 @@
 Os arquivos vem do repositorio de papeis do WhiteSur, baixado pela receita 33,
 e ficam na pasta de imagens de fundo do usuario. Aqui so listamos, geramos
 miniatura e resolvemos qual usar.
+
+Antes da instalacao a pasta ainda nao existe, entao o pacote traz uma
+miniatura de cada papel em recursos/web/papeis. A escolha e guardada pelo
+nome, e o contexto e refeito a cada receita: quando a aparencia roda, o
+arquivo com esse nome ja foi baixado. Para refazer as miniaturas depois de
+baixar uma versao nova do repositorio:
+
+    for f in ~/.local/share/backgrounds/WhiteSur/*; do
+      convert "$f" -resize 320x -strip -quality 78 \\
+        "recursos/web/papeis/$(basename "${f%.*}").jpg"
+    done
 """
 
 from __future__ import annotations
@@ -14,6 +25,7 @@ from pathlib import Path
 from . import caminhos
 
 PASTA = Path.home() / ".local/share/backgrounds/WhiteSur"
+CATALOGO = caminhos.WEB / "papeis"
 EXTENSOES = (".jpg", ".jpeg", ".png")
 NOME_VALIDO = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,80}")
 
@@ -26,12 +38,11 @@ PREFERENCIA = {
 }
 
 
-def disponiveis() -> list[dict]:
-    """Os papeis de parede que existem, em ordem alfabetica."""
-    if not PASTA.is_dir():
+def _listar(pasta: Path) -> list[dict]:
+    if not pasta.is_dir():
         return []
     saida = []
-    for arquivo in sorted(PASTA.iterdir()):
+    for arquivo in sorted(pasta.iterdir()):
         if arquivo.suffix.lower() not in EXTENSOES or not arquivo.is_file():
             continue
         if not NOME_VALIDO.fullmatch(arquivo.stem):
@@ -39,6 +50,17 @@ def disponiveis() -> list[dict]:
         saida.append({"nome": arquivo.stem, "arquivo": arquivo.name,
                       "escuro": "dark" in arquivo.stem.lower()})
     return saida
+
+
+def baixados() -> bool:
+    """Os papeis ja chegaram na maquina?"""
+    return bool(_listar(PASTA))
+
+
+def disponiveis() -> list[dict]:
+    """Os papeis de parede, em ordem alfabetica: os baixados ou, antes do
+    download, os do catalogo que vem no pacote."""
+    return _listar(PASTA) or _listar(CATALOGO)
 
 
 def caminho(nome: str) -> Path | None:
@@ -52,21 +74,27 @@ def caminho(nome: str) -> Path | None:
     return None
 
 
-def escolhido(cfg: dict[str, str]) -> Path | None:
-    """Qual arquivo usar, conforme a preferencia. None quer dizer nao mexer."""
+def nome_escolhido(cfg: dict[str, str]) -> str | None:
+    """Qual papel usar, pelo nome; vale tambem antes do download."""
     valor = cfg.get("papel_de_parede", "do-tema")
     if valor == "manter":
         return None
-    if valor != "do-tema":
-        direto = caminho(valor)
-        if direto:
-            return direto
-    existentes = {p["nome"] for p in disponiveis()}
+    todos = disponiveis()
+    existentes = {p["nome"] for p in todos}
+    # um nome que sumiu do repositorio cai na preferencia do tema
+    if valor != "do-tema" and valor in existentes:
+        return valor
     for nome in PREFERENCIA.get(cfg.get("tema", "escuro"), ()):
         if nome in existentes:
-            return caminho(nome)
-    todos = disponiveis()
-    return caminho(todos[0]["nome"]) if todos else None
+            return nome
+    return todos[0]["nome"] if todos else None
+
+
+def escolhido(cfg: dict[str, str]) -> Path | None:
+    """Qual arquivo usar, conforme a preferencia. None quer dizer nao mexer,
+    inclusive quando as imagens ainda nao foram baixadas."""
+    nome = nome_escolhido(cfg)
+    return caminho(nome) if nome else None
 
 
 def do_desktop() -> Path | None:
@@ -104,9 +132,14 @@ def fundo_login(cfg: dict[str, str]) -> Path | None:
 
 
 def miniatura(nome: str, largura: int = 320) -> Path | None:
-    """Miniatura em cache de um papel da galeria."""
+    """Miniatura em cache de um papel da galeria; antes do download, a do pacote."""
     origem = caminho(nome)
-    return _miniatura(origem, nome, largura) if origem else None
+    if origem:
+        return _miniatura(origem, nome, largura)
+    if not NOME_VALIDO.fullmatch(nome or ""):
+        return None
+    pronta = CATALOGO / f"{nome}.jpg"
+    return pronta if pronta.is_file() else None
 
 
 def _miniatura(origem: Path, chave: str, largura: int) -> Path | None:

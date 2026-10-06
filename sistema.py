@@ -211,7 +211,7 @@ def _verificar() -> list[dict]:
     liberado = sudo_liberado()
     add("Permissao de administrador", liberado,
         "autorizada nesta sessao" if liberado
-        else "sem credencial; abra o painel pelo comando d3bian-init-bigsur-xfce")
+        else "sem credencial; abra o painel pelo comando d3bian-init-bigsur-minimalista-xfce")
 
     gb = espaco_livre_gb()
     add("Espaco em disco", gb < 0 or gb >= 2.0,
@@ -228,3 +228,14 @@ def _verificar() -> list[dict]:
 def impedimentos(lista: list[dict] | None = None) -> list[str]:
     """Nomes das verificacoes criticas que falharam."""
     return [c["nome"] for c in (lista or verificacoes()) if c["critico"] and not c["ok"]]
+
+
+def pacotes_instalados() -> set[str]:
+    """Nomes dos pacotes instalados agora, sem a arquitetura; vazio se o dpkg nao responder."""
+    try:
+        saida = subprocess.run(["dpkg-query", "-W", "-f=${binary:Package} ${db:Status-Status}\n"],
+                               capture_output=True, text=True, env={**os.environ, "LC_ALL": "C"}).stdout
+    except OSError:
+        return set()
+    return {linha.split()[0].split(":")[0] for linha in saida.splitlines()
+            if linha.endswith(" installed")}

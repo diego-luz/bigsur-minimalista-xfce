@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" width="520" height="120" role="img" aria-label="d3bian-init bigsur-minimalista-xfce">
+  <rect width="120" height="120" rx="28" fill="#0b0b0c"/>
+  <text x="22" y="80" fill="#fff" font-family="JetBrains Mono, Fira Code, monospace" font-weight="700" font-size="54">&gt;_</text>
+  <circle cx="98" cy="28" r="9" fill="#ffb454"/>
+  <text x="140" y="64" fill="#888" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="700" font-size="44" letter-spacing="-1.5">d3bian<tspan fill="#ffb454">-</tspan>init</text>
+  <text x="142" y="100" fill="#ffb454" font-family="JetBrains Mono, Fira Code, monospace" font-weight="600" font-size="26">bigsur-minimalista-xfce</text>
+</svg>

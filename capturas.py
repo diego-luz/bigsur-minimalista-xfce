@@ -21,9 +21,7 @@ LARGURA = 1280
 def nome_do_momento(cfg: dict[str, str] | None = None) -> str:
     """Qual previa corresponde as preferencias que estao valendo agora."""
     cfg = cfg or config.ler()
-    tema = "escuro" if cfg.get("tema") == "escuro" else "claro"
-    widget = "sem" if cfg.get("widget") == "nao" else "com"
-    return f"{tema}-{widget}-widget"
+    return "escuro" if cfg.get("tema") == "escuro" else "claro"
 
 
 def _redimensionar(origem: Path, destino: Path) -> bool:
@@ -77,23 +75,21 @@ def capturar_atual(diz: Callable[[str], None], espera: int = 5) -> int:
 
 
 def capturar_todas(diz: Callable[[str], None], espera: int = 5) -> int:
-    """Percorre as quatro combinacoes e devolve o estado original no fim."""
+    """Fotografa o tema claro e o escuro, e devolve o estado original no fim."""
     from . import receitas                      # import tardio, evita ciclo
 
     original = config.ler()
     contar(espera, diz)
     falhas = 0
     for tema in ("escuro", "claro"):
-        for widget in ("sim", "nao"):
-            diz(f"  preparando: tema {tema}, widget {widget}")
-            cfg = {**original, "tema": tema, "widget": widget}
-            receitas.executar(apenas=["38", "40", "80"], refazer=True,
-                              saida=lambda _t: None, cfg=cfg)
-            time.sleep(4)
-            if not tirar(f"{tema}-{'com' if widget == 'sim' else 'sem'}-widget", diz):
-                falhas += 1
+        diz(f"  preparando: tema {tema}")
+        receitas.executar(apenas=["38", "40"], refazer=True,
+                          saida=lambda _t: None, cfg={**original, "tema": tema})
+        time.sleep(4)
+        if not tirar(tema, diz):
+            falhas += 1
     diz("  devolvendo o estado anterior")
-    receitas.executar(apenas=["38", "40", "80"], refazer=True,
+    receitas.executar(apenas=["38", "40"], refazer=True,
                       saida=lambda _t: None, cfg=original)
     return 1 if falhas else 0
 

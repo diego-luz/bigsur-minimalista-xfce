@@ -37,7 +37,7 @@ modelo = "login-greeter.conf"
 tipo = "arquivo"
 destino = "@@login_dir@@/lightdm.conf.d/90-d3bian.conf"
 conteudo = '''
-# Escrito pelo d3bian-init-bigsur-xfce.
+# Escrito pelo d3bian-init-bigsur-minimalista-xfce.
 [Seat:*]
 greeter-session=lightdm-gtk-greeter
 # true mostra os campos de nome e senha; false, a lista de usuarios
@@ -96,6 +96,9 @@ dizer = "levando para o sistema"
 corpo = '''
 d="$D3_LOGIN_DIR"
 tema=/usr/share/themes/d3bian-login
+# anotado antes de levar para o sistema; o desfazer apaga ou devolve cada um
+d3_antes "$D3_LOGIN_RAIZ" "$tema" /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d/90-d3bian.conf \
+         /etc/lightdm/lightdm.conf.d/90-d3bian.conf
 sudo -n install -d -m 755 "$D3_LOGIN_RAIZ" "$tema/gtk-3.0" \
      /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d /etc/lightdm/lightdm.conf.d
 sudo -n install -m 644 "$d/fundo.jpg" "$d/avatar.png" "$D3_LOGIN_RAIZ/"

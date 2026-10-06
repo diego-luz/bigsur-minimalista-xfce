@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 from typing import Callable, Iterable
 
-from . import caminhos, estado, papeis, sistema
+from . import caminhos, diario, estado, papeis, sistema
 
 Saida = Callable[[str], None]
 
@@ -36,14 +36,6 @@ DESTAQUE_EXTERNO = {
     "vermelho": "red", "laranja": "orange", "amarelo": "yellow",
     "verde": "green", "cinza": "grey",
 }
-
-# as mesmas cores que a pagina usa no esquema; o widget de aneis pinta com elas
-DESTAQUE_COR = {
-    "padrao": "0860f2", "azul": "2e7cf7", "roxo": "9a57a3", "rosa": "e55e9c",
-    "vermelho": "ed5f5d", "laranja": "e9873a", "amarelo": "f3ba4b",
-    "verde": "79b757", "cinza": "8c8c8c",
-}
-
 
 def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
     escuro = cfg.get("tema") == "escuro"
@@ -65,9 +57,11 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
     # A tela de login fica sempre sobre a variante escura: os campos sao de
     # vidro claro sobre uma foto, e os menus do topo precisam de texto branco.
     temas = Path("/usr/share/themes")
-    login_tema = temas / f"WhiteSur-Dark{sufixo}" / "gtk-3.0/gtk.css"
-    if not login_tema.is_file():
-        login_tema = temas / "WhiteSur-Dark" / "gtk-3.0/gtk.css"
+    login_tema = temas / f"WhiteSur-Dark-solid{sufixo}" / "gtk-3.0/gtk.css"
+    for alternativa in ("WhiteSur-Dark-solid", "WhiteSur-Dark"):
+        if login_tema.is_file():
+            break
+        login_tema = temas / alternativa / "gtk-3.0/gtk.css"
 
     # o lightdm nao le a pasta pessoal, que no Debian e fechada; a foto vai
     # para /usr/share na instalacao
@@ -76,22 +70,14 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
 
     minutos = cfg.get("bloqueio", "10")
 
-    # Em maquina virtual o video costuma ser simulado no processador, e o picom
-    # com glx e vsync deixa de redesenhar as janelas: o terminal recebe o que se
-    # digita, mas o texto so aparece quando o foco muda. O xrender e mais
-    # simples e funciona nesses casos.
-    try:
-        virtual = " hypervisor" in Path("/proc/cpuinfo").read_text()
-    except OSError:
-        virtual = False
-
     ctx: dict[str, str] = dict(cfg)
     ctx.update({
         "HOME": str(Path.home()),
         "USUARIO": os.environ.get("USER", ""),
         "gtk_variante": variante,
-        "gtk_tema": f"WhiteSur-{variante}{sufixo}",
-        "gtk_tema_base": f"WhiteSur-{variante}",
+        # -solid entra antes da cor de destaque, na ordem do instalador
+        "gtk_tema": f"WhiteSur-{variante}-solid{sufixo}",
+        "gtk_tema_base": f"WhiteSur-{variante}-solid",
         "gtk_sufixo": sufixo,
         "gtk_escuro": "true" if escuro else "false",
         # e o que os apps libadwaita e o portal consultam para escolher a cor
@@ -102,28 +88,29 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
         "cursores": "WhiteSur-cursors",
         # as duas variantes ficam na mesma pasta Kvantum/WhiteSur
         "kvantum_tema": "WhiteSurDark" if escuro else "WhiteSur",
-        "logo_arquivo": str(caminhos.ARQUIVOS / "logos" / arquivo_logo),
-        "painel_fundo": "0.11 0.11 0.13 0.55" if escuro else "0.97 0.97 0.99 0.72",
+        # o painel le o icone a cada sessao; apontar para dentro do pacote
+        # quebra quando ele roda de um pendrive, entao a receita copia o logo
+        # de logo_origem para logo_arquivo, que fica na maquina
+        "logo_origem": str(caminhos.ARQUIVOS / "logos" / arquivo_logo),
+        "logo_arquivo": str(Path.home() / ".local/share/icons/d3bian-init" / arquivo_logo),
+        "painel_fundo": "0.11 0.11 0.13 0.96" if escuro else "0.97 0.97 0.99 0.96",
         "painel_texto": "#f2f2f7" if escuro else "#1d1d1f",
         "fonte_ui": "SF Pro Display" if cfg.get("fonte_interface") == "sf-pro" else "Inter",
         "fonte_mono": "Fira Code",
         "destaque_externo": destaque,
-        "widget_cor": DESTAQUE_COR.get(cfg.get("destaque", "padrao"), DESTAQUE_COR["padrao"]),
         "papel_arquivo": str(papeis.escolhido(cfg) or ""),
         # login_dir e onde os arquivos sao montados, numa pasta temporaria que
         # a receita apaga ao terminar, sem deixar nada na pasta pessoal;
         # login_raiz e onde o greeter os enxerga. A previa troca os dois e
         # desliga login_instalar
-        "login_dir": str(Path(tempfile.gettempdir()) / f"d3bian-init-login-{os.getuid()}"),
-        "login_raiz": "/usr/share/backgrounds/d3bian-init",
+        "login_dir": str(Path(tempfile.gettempdir()) / f"d3bian-init-minimalista-login-{os.getuid()}"),
+        "login_raiz": "/usr/share/backgrounds/d3bian-init-minimalista",
         "login_instalar": "sim",
         "login_tema_base": str(login_tema),
         "login_fundo_arquivo": str(papeis.fundo_login(cfg) or ""),
         "login_avatar_arquivo": str(avatar),
         "login_esconder_usuarios": "false" if cfg.get("login_usuarios") == "lista" else "true",
         "bloqueio_segundos": str(int(minutos) * 60) if minutos.isdigit() else "0",
-        "picom_backend": "xrender" if virtual else "glx",
-        "picom_vsync": "false" if virtual else "true",
         "fontes": str(caminhos.FONTES),
         "arquivos": str(caminhos.ARQUIVOS),
         # anotacoes para consulta ficam aqui, fora da pasta de backup
@@ -133,7 +120,7 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
 
 
 # @@chave@@ em vez de {chave}: as chaves colidiriam com a sintaxe do
-# conky, do CSS e do shell, que aparecem nos modelos
+# do CSS e do shell, que aparecem nos modelos
 _CHAVE = re.compile(r"@@([a-zA-Z_][a-zA-Z0-9_]*)@@")
 
 
@@ -168,10 +155,18 @@ class ErroDePasso(Exception):
 
 class Motor:
     def __init__(self, ctx: dict[str, str], saida: Saida | None = None,
-                 simular: bool = False) -> None:
+                 simular: bool = False, receita: str = "", anotar: bool = True) -> None:
         self.ctx = ctx
         self.simular = simular
         self._saida = saida or (lambda t: None)
+        # o diario (diario.py) guarda o que mudou, para o desfazer; a simulacao
+        # e o proprio desfazer nao anotam
+        self.receita = receita
+        self.anotar = anotar and not simular
+
+    def _anotar(self, tipo: str, **dados) -> None:
+        if self.anotar:
+            diario.anotar(tipo, receita=self.receita, **dados)
 
     # ---- utilidades ------------------------------------------------------
     def diz(self, texto: str) -> None:
@@ -219,10 +214,16 @@ class Motor:
             self.diz("  pacotes ja presentes")
             return
         self.diz(f"  instalando: {', '.join(faltam)}")
+        antes = sistema.pacotes_instalados()
         codigo = self._executa(["apt-get", "install", "-y", "--no-install-recommends",
                                 *faltam], root=True)
         if codigo != 0:
             raise ErroDePasso(f"apt-get falhou ao instalar {', '.join(faltam)}")
+        # so os que faltavam: o que ja existia na maquina nunca entra no remover.
+        # As dependencias que vieram junto tambem ficam anotadas: o autoremove do
+        # Debian guarda as que outro pacote so sugere, e elas sobrariam
+        vieram = sorted(sistema.pacotes_instalados() - antes - set(faltam)) if antes else []
+        self._anotar("pacotes", nomes=faltam, dependencias=vieram)
 
     def passo_xfconf(self, p: dict) -> None:
         canal = resolver(p["canal"], self.ctx)
@@ -231,6 +232,8 @@ class Motor:
         # "tipo_valor", senao um sobrescreve o outro
         tipo = p.get("tipo_valor", "string")
         valor = resolver(p["valor"], self.ctx)
+        if self.anotar:
+            diario.antes_do_xfconf(canal, chave, tipo, self.receita)
         valores = valor.split() if tipo == "double-array" else [str(valor)]
         tipos = ["double"] * len(valores) if tipo == "double-array" else [tipo]
         args = ["xfconf-query", "-c", canal, "-p", chave]
@@ -258,17 +261,19 @@ class Motor:
         if self.simular:
             self.diz(f"  [simulacao] escreveria {destino}")
             return
+        existia = destino.exists()
         estado.copia_de_seguranca(destino)
         destino.parent.mkdir(parents=True, exist_ok=True)
         destino.write_text(conteudo)
         if p.get("modo"):
             destino.chmod(int(str(p["modo"]), 8))
+        self._anotar("alterado" if existia else "criado", caminho=str(destino))
         self.diz(f"  escrito {destino}")
 
     def passo_bloco(self, p: dict) -> None:
         """Insere ou troca um trecho marcado dentro de um arquivo existente."""
         destino = self._caminho(p["destino"])
-        marca = resolver(p.get("marca", "d3bian-init"), self.ctx)
+        marca = resolver(p.get("marca", "d3bian-init-minimalista"), self.ctx)
         conteudo = resolver(p.get("conteudo", ""), self.ctx)
         abre, fecha = f"/* {marca} */", f"/* fim {marca} */"
         if p.get("comentario") == "#":
@@ -276,12 +281,16 @@ class Motor:
         if self.simular:
             self.diz(f"  [simulacao] bloco '{marca}' em {destino}")
             return
+        existia = destino.exists()
         estado.copia_de_seguranca(destino)
         destino.parent.mkdir(parents=True, exist_ok=True)
-        texto = destino.read_text() if destino.exists() else ""
+        texto = destino.read_text() if existia else ""
         texto = re.sub(re.escape(abre) + r".*?" + re.escape(fecha), "", texto, flags=re.S)
         texto = texto.rstrip() + f"\n\n{abre}\n{conteudo.strip()}\n{fecha}\n"
         destino.write_text(texto)
+        # so o bloco sai no desfazer; o que a pessoa escreveu no arquivo depois fica
+        self._anotar("bloco", caminho=str(destino), marca=marca,
+                     comentario=p.get("comentario", ""), arquivo_novo=not existia)
         self.diz(f"  bloco '{marca}' em {destino}")
 
     def passo_git(self, p: dict) -> None:
@@ -304,6 +313,7 @@ class Motor:
                           str(destino)]) != 0:
             if self._executa(["git", "clone", "--depth", "1", url, str(destino)]) != 0:
                 raise ErroDePasso(f"nao consegui clonar {url}")
+        self._anotar("criado", caminho=str(destino))
 
     def passo_comando(self, p: dict) -> None:
         argumentos = [str(x) for x in resolver(p["argumentos"], self.ctx)]
@@ -317,12 +327,17 @@ class Motor:
         if self.simular:
             self.diz("  [simulacao] rodaria um trecho de shell")
             return
-        ambiente = {**os.environ, "DEBIAN_FRONTEND": "noninteractive"}
+        # sem TERM, instaladores que mexem no terminal (setterm, tput) param com
+        # erro; e o que acontece com o painel aberto pelo menu, fora de um terminal
+        ambiente = {**os.environ, "DEBIAN_FRONTEND": "noninteractive",
+                    "TERM": os.environ.get("TERM") or "dumb"}
         for chave, valor in self.ctx.items():
             if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", chave):
                 ambiente[f"D3_{chave.upper()}"] = str(valor)
+        # as funcoes d3_antes, d3_xfconf... que anotam no diario (ver diario.py)
+        ambiente.update(diario.ambiente_shell(self.receita, self.anotar))
         estado.registrar("+ shell:\n" + corpo)
-        proc = subprocess.run(["bash", "-euo", "pipefail", "-c", corpo],
+        proc = subprocess.run(["bash", "-euo", "pipefail", "-c", diario.FUNCOES_SHELL + corpo],
                               capture_output=True, text=True, env=ambiente)
         for linha in (proc.stdout or "").splitlines():
             self.diz("  " + linha)
@@ -347,6 +362,11 @@ class Motor:
         if self.simular:
             self.diz(f"  [simulacao] copiaria {origem} para {destino}")
             return
+        # a copia apaga o destino antes; sem esta copia de seguranca o que ja
+        # estava ali se perdia
+        existia = destino.exists()
+        if existia:
+            estado.copia_de_seguranca(destino)
         if p.get("root"):
             self._executa(["mkdir", "-p", str(destino.parent)], root=True)
             self._executa(["rm", "-rf", str(destino)], root=True)
@@ -360,14 +380,17 @@ class Motor:
                 shutil.copytree(origem, destino, symlinks=True, dirs_exist_ok=True)
             else:
                 shutil.copy2(origem, destino)
+        self._anotar("alterado" if existia else "criado", caminho=str(destino))
         self.diz(f"  copiado para {destino}")
 
     def passo_autostart(self, p: dict) -> None:
         ident = resolver(p["id"], self.ctx)
         arquivo = Path.home() / ".config/autostart" / f"{ident}.desktop"
         if p.get("remover"):
-            if not self.simular:
-                arquivo.unlink(missing_ok=True)
+            if not self.simular and arquivo.exists():
+                estado.copia_de_seguranca(arquivo)
+                arquivo.unlink()
+                self._anotar("alterado", caminho=str(arquivo))
             self.diz(f"  inicializacao automatica removida: {ident}")
             return
         conteudo = (
@@ -380,8 +403,11 @@ class Motor:
         if self.simular:
             self.diz(f"  [simulacao] inicializacao automatica: {ident}")
             return
+        existia = arquivo.exists()
+        estado.copia_de_seguranca(arquivo)
         arquivo.parent.mkdir(parents=True, exist_ok=True)
         arquivo.write_text(conteudo)
+        self._anotar("alterado" if existia else "criado", caminho=str(arquivo))
         self.diz(f"  inicializacao automatica: {ident}")
 
     def passo_processo(self, p: dict) -> None:
@@ -391,6 +417,8 @@ class Motor:
         if self.simular:
             self.diz(f"  [simulacao] {acao} {nome}")
             return
+        if self.anotar:
+            diario.antes_do_processo(nome, self.receita)
         if acao in ("parar", "reiniciar"):
             subprocess.run(["pkill", "-x", nome], capture_output=True)
         if acao in ("iniciar", "reiniciar"):

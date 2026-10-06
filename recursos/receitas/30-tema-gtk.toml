@@ -16,8 +16,26 @@ tipo = "script"
 dizer = "compilando e instalando, a parte mais demorada"
 corpo = '''
 cd "$D3_FONTES/WhiteSur-gtk-theme"
+# antes de anotar qualquer tema la dentro: o desfazer anda de tras para frente
+d3_pasta "$HOME/.themes"
+# anotado antes de instalar, para o desfazer saber o que e do projeto
+# com -o solid o instalador cria WhiteSur-<variante>-solid e a versao com a cor
+for v in Light Dark; do
+  d3_antes "$HOME/.themes/WhiteSur-$v-solid" "$HOME/.themes/WhiteSur-$v-solid$D3_GTK_SUFIXO"
+done
+# o instalador ajusta a opacidade do menu nos .rc do whiskermenu
+for f in "$HOME"/.config/xfce4/panel/whiskermenu*.rc; do
+  if [ -e "$f" ]; then d3_antes "$f"; fi
+done
+# ele tambem instala o gnome-theme-switcher e as variantes -hdpi e -xhdpi
+extras=("$HOME/.themes/WhiteSur-*hdpi" "$HOME/.local/bin/gnome-theme-switcher"
+        "$HOME/.local/share/applications/org.gnome.GTK4ThemeSwitcher.desktop")
+d3_antes_de "${extras[@]}"
 # --silent-mode exige root, entao nao entra aqui
-bash ./install.sh -c light -c dark -t "$D3_DESTAQUE_EXTERNO" -o normal -a normal --round
+# -o solid: sem transparencia, que e o que diferencia este do bigsur cheio;
+# o instalador poe o sufixo -solid no nome da pasta do tema
+bash ./install.sh -c light -c dark -t "$D3_DESTAQUE_EXTERNO" -o solid -a normal
+d3_depois_de "${extras[@]}"
 '''
 
 [[passo]]
@@ -30,6 +48,7 @@ for t in "$HOME/.themes/WhiteSur-Light$D3_GTK_SUFIXO" \
          "$HOME/.themes/WhiteSur-Dark$D3_GTK_SUFIXO" \
          "$HOME/.themes/WhiteSur-Light" "$HOME/.themes/WhiteSur-Dark"; do
   [ -d "$t" ] || continue
+  d3_antes "/usr/share/themes/$(basename "$t")"
   sudo -n rm -rf "/usr/share/themes/$(basename "$t")"
   sudo -n cp -a "$t" /usr/share/themes/
 done

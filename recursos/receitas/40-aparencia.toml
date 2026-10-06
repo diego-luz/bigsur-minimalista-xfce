@@ -120,6 +120,14 @@ tipo = "arquivo"
 destino = "~/.gtkrc-2.0"
 modelo = "gtkrc-2.0"
 
+# o valor de antes das tres chaves abaixo, para o desfazer
+[[passo]]
+tipo = "script"
+tolera_falha = true
+corpo = '''
+for chave in color-scheme gtk-theme icon-theme; do d3_gsettings org.gnome.desktop.interface "$chave"; done
+'''
+
 # apps libadwaita, o seletor de arquivos do portal e o Firefox leem estas
 # chaves e nao o xsettings; sem elas abrem claros mesmo no tema escuro
 [[passo]]
@@ -158,6 +166,7 @@ for f in assets gtk.css gtk-dark.css; do
     echo "mantendo $alvo, que nao e um link"
     continue
   fi
+  d3_antes "$alvo"
   ln -sfn "$origem/$f" "$alvo"
 done
 echo "GTK4 usando $(dirname "$origem" | xargs basename)"
@@ -173,11 +182,14 @@ if [ -z "$D3_PAPEL_ARQUIVO" ]; then
   echo "mantendo o papel de parede que voce escolheu"
 else
   for p in $(xfconf-query -c xfce4-desktop -l | grep -E 'last-image$'); do
+    d3_xfconf xfce4-desktop "$p" string
     xfconf-query -c xfce4-desktop -p "$p" -s "$D3_PAPEL_ARQUIVO"
   done
   # a chave do monitor atual pode ainda nao existir
   for mon in $(xrandr --query 2>/dev/null | awk '/ connected/{print $1}'); do
     chave="/backdrop/screen0/monitor$mon/workspace0/last-image"
+    d3_xfconf xfce4-desktop "$chave" string
+    d3_xfconf xfce4-desktop "/backdrop/screen0/monitor$mon/workspace0/image-style" int
     xfconf-query -c xfce4-desktop -p "$chave" -n -t string -s "$D3_PAPEL_ARQUIVO" 2>/dev/null \
       || xfconf-query -c xfce4-desktop -p "$chave" -s "$D3_PAPEL_ARQUIVO" 2>/dev/null || true
     xfconf-query -c xfce4-desktop -p "/backdrop/screen0/monitor$mon/workspace0/image-style" \

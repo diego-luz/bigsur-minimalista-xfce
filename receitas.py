@@ -25,6 +25,8 @@ class Receita:
     requer: list[str] = field(default_factory=list)
     afetada_por: list[str] = field(default_factory=list)
     arquivo: Path | None = None
+    # [[desfazer]]: passos que o desfazer.py roda para o que o diario nao cobre
+    desfazer: list[dict] = field(default_factory=list)
 
     @property
     def aplicada(self) -> bool:
@@ -55,6 +57,7 @@ def carregar() -> list[Receita]:
             requer=[str(x) for x in cabecalho.get("requer", [])],
             afetada_por=[str(x) for x in cabecalho.get("afetada_por", [])],
             arquivo=arquivo,
+            desfazer=dados.get("desfazer", []),
         ))
     return saida
 
@@ -136,7 +139,10 @@ def executar(apenas: list[str] | None = None, pular: list[str] | None = None,
             continue
 
         diz(f"\n==> {receita.ident} {receita.titulo}")
-        maquina = motor.Motor(ctx, saida=diz, simular=simular)
+        # o contexto e refeito a cada receita: o papel de parede e o fundo do login
+        # so existem depois que a receita de papeis baixou as imagens
+        ctx = motor.montar_contexto(cfg)
+        maquina = motor.Motor(ctx, saida=diz, simular=simular, receita=receita.ident)
         try:
             maquina.rodar(receita.passos)
         except motor.ErroDePasso as erro:

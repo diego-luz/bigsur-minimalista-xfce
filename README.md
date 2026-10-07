@@ -12,7 +12,7 @@
 
 </div>
 
-> A cara de macOS do [bigsur-xfce](https://git.saberdl.dev.br/d3bian/bigsur-xfce),
+> A cara de macOS do [bigsur-xfce](https://git.saberdl.dev.br/d3bian-temas/bigsur-xfce),
 > **sem os enfeites**: uma barra só no topo, janelas sólidas e nada mais ocupando a
 > tela. É a mesma pegada das montagens minimalistas de Xfce com cara de Mac — como
 > [esta do Diolinux Plus](https://plus.diolinux.com.br/t/void-xfce-minimalista/74056),
@@ -20,7 +20,7 @@
 > local, aberto no navegador, e só Python da biblioteca padrão — nada de pip.
 
 ```sh
-git clone https://git.saberdl.dev.br/d3bian/bigsur-minimalista-xfce.git d3bian_init_bigsur_minimalista_xfce
+git clone https://git.saberdl.dev.br/d3bian-temas/bigsur-minimalista-xfce.git d3bian_init_bigsur_minimalista_xfce
 python3 -m d3bian_init_bigsur_minimalista_xfce        # pede a senha uma vez e abre o painel
 ```
 
@@ -42,7 +42,7 @@ python3 -m d3bian_init_bigsur_minimalista_xfce        # pede a senha uma vez e a
 - **Voltar ao que era antes** com um clique, inclusive removendo o que foi instalado
 
 Sem dock, sem compositor extra e sem Conky: quatro pacotes a menos que o
-[bigsur completo](https://git.saberdl.dev.br/d3bian/bigsur-xfce) e nenhum processo
+[bigsur completo](https://git.saberdl.dev.br/d3bian-temas/bigsur-xfce) e nenhum processo
 permanente além do painel.
 
 <!-- imagens: gerado a partir do teste num Debian 13; refazer, nao editar a mao -->
@@ -74,19 +74,20 @@ permanente além do painel.
 ## Família d3bian-init
 
 Todos com o mesmo motor e o mesmo jeito de usar: um painel local, só Python da biblioteca padrão, e "voltar ao que era antes".
+Os de terminal ficam em [d3bian-terminal](https://git.saberdl.dev.br/d3bian-terminal); os temas e o modelo, em [d3bian-temas](https://git.saberdl.dev.br/d3bian-temas).
 
 | | Projeto | O que faz |
 |---|---|---|
-| 💻 | [terminal](https://git.saberdl.dev.br/d3bian/terminal) · [terminal-kde](https://git.saberdl.dev.br/d3bian/terminal-kde) | Fish, Oh My Posh, Nerd Font e cores (xfce4-terminal/GNOME Terminal ou Konsole) |
-| 💻 | [zsh](https://git.saberdl.dev.br/d3bian/zsh) · [zsh-kde](https://git.saberdl.dev.br/d3bian/zsh-kde) | Zsh com sugestões e realce, Oh My Posh, Nerd Font e cores |
-| 💻 | [bash](https://git.saberdl.dev.br/d3bian/bash) · [bash-kde](https://git.saberdl.dev.br/d3bian/bash-kde) | O bash de sempre, com sugestões e realce, Oh My Posh e Nerd Font |
-| 🎨 | [bigsur-kde](https://git.saberdl.dev.br/d3bian/bigsur-kde) · [mactahoe-kde](https://git.saberdl.dev.br/d3bian/mactahoe-kde) | Cara de macOS (Big Sur ou Tahoe) no KDE Plasma 6 |
-| 🎨 | [fluent-kde](https://git.saberdl.dev.br/d3bian/fluent-kde) · [chromeos-kde](https://git.saberdl.dev.br/d3bian/chromeos-kde) | Cara de Windows 11 ou de ChromeOS no KDE Plasma 6 |
-| 🎨 | [catppuccin-kde](https://git.saberdl.dev.br/d3bian/catppuccin-kde) · [graphite-kde](https://git.saberdl.dev.br/d3bian/graphite-kde) · [layan-kde](https://git.saberdl.dev.br/d3bian/layan-kde) · [orchis-kde](https://git.saberdl.dev.br/d3bian/orchis-kde) | Temas Catppuccin, Graphite, Layan e Orchis no KDE Plasma 6 |
-| 🪟 | [bigsur-xfce](https://git.saberdl.dev.br/d3bian/bigsur-xfce) · **bigsur-minimalista-xfce** | Cara de macOS Big Sur no Xfce, completo ou minimalista |
-| 🪟 | [minimal-xfce](https://git.saberdl.dev.br/d3bian/minimal-xfce) · [paleta-xfce](https://git.saberdl.dev.br/d3bian/paleta-xfce) | Xfce enxuto, ou numa paleta só (Nord, Gruvbox, Everforest) |
-| 🍎 | [tahoe-gnome](https://git.saberdl.dev.br/d3bian/tahoe-gnome) | Cara de macOS Tahoe no GNOME 48 |
-| 🧩 | [modelo](https://git.saberdl.dev.br/d3bian/modelo) | O modelo de onde todos saem: crie o seu próprio d3bian-init |
+| 💻 | [terminal](https://git.saberdl.dev.br/d3bian-terminal/terminal) · [terminal-kde](https://git.saberdl.dev.br/d3bian-terminal/terminal-kde) | Fish, Oh My Posh, Nerd Font e cores (xfce4-terminal/GNOME Terminal ou Konsole) |
+| 💻 | [zsh](https://git.saberdl.dev.br/d3bian-terminal/zsh) · [zsh-kde](https://git.saberdl.dev.br/d3bian-terminal/zsh-kde) | Zsh com sugestões e realce, Oh My Posh, Nerd Font e cores |
+| 💻 | [bash](https://git.saberdl.dev.br/d3bian-terminal/bash) · [bash-kde](https://git.saberdl.dev.br/d3bian-terminal/bash-kde) | O bash de sempre, com sugestões e realce, Oh My Posh e Nerd Font |
+| 🎨 | [bigsur-kde](https://git.saberdl.dev.br/d3bian-temas/bigsur-kde) · [mactahoe-kde](https://git.saberdl.dev.br/d3bian-temas/mactahoe-kde) | Cara de macOS (Big Sur ou Tahoe) no KDE Plasma 6 |
+| 🎨 | [fluent-kde](https://git.saberdl.dev.br/d3bian-temas/fluent-kde) · [chromeos-kde](https://git.saberdl.dev.br/d3bian-temas/chromeos-kde) | Cara de Windows 11 ou de ChromeOS no KDE Plasma 6 |
+| 🎨 | [catppuccin-kde](https://git.saberdl.dev.br/d3bian-temas/catppuccin-kde) · [graphite-kde](https://git.saberdl.dev.br/d3bian-temas/graphite-kde) · [layan-kde](https://git.saberdl.dev.br/d3bian-temas/layan-kde) · [orchis-kde](https://git.saberdl.dev.br/d3bian-temas/orchis-kde) | Temas Catppuccin, Graphite, Layan e Orchis no KDE Plasma 6 |
+| 🪟 | [bigsur-xfce](https://git.saberdl.dev.br/d3bian-temas/bigsur-xfce) · **bigsur-minimalista-xfce** | Cara de macOS Big Sur no Xfce, completo ou minimalista |
+| 🪟 | [minimal-xfce](https://git.saberdl.dev.br/d3bian-temas/minimal-xfce) · [paleta-xfce](https://git.saberdl.dev.br/d3bian-temas/paleta-xfce) | Xfce enxuto, ou numa paleta só (Nord, Gruvbox, Everforest) |
+| 🍎 | [tahoe-gnome](https://git.saberdl.dev.br/d3bian-temas/tahoe-gnome) | Cara de macOS Tahoe no GNOME 48 |
+| 🧩 | [modelo](https://git.saberdl.dev.br/d3bian-temas/modelo) | O modelo de onde todos saem: crie o seu próprio d3bian-init |
 
 ## Créditos
 

@@ -10,6 +10,7 @@ dizer = "guardando a configuracao atual"
 caminhos = [
   "~/.config/xfce4",
   "~/.config/autostart",
+  "~/.config/picom",
   "~/.config/gtk-3.0",
   "~/.config/gtk-4.0",
   "~/.config/Kvantum",

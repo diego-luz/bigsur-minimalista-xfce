@@ -72,6 +72,33 @@ def geometria(janela: int) -> tuple[int, int, int, int] | None:
         return None
 
 
+def margens_xfwm4() -> tuple[int, int, int, int]:
+    """Margens do xfwm4 (esquerda, direita, cima, baixo), em pixels de verdade.
+
+    Painel solto da borda (as ilhas) nao reserva espaco e fica fora da area
+    util que o GDK le (_NET_WORKAREA); quem guarda o lugar dele sao as margens.
+    """
+    valores = []
+    for lado in ("left", "right", "top", "bottom"):
+        texto = x11("xfconf-query", "-c", "xfwm4", "-p", f"/general/margin_{lado}").strip()
+        valores.append(int(texto) if texto.isdigit() else 0)
+    return valores[0], valores[1], valores[2], valores[3]
+
+
+def area_util(monitor) -> tuple[int, int, int, int]:
+    """A area util do monitor menos as margens do xfwm4, em pixels logicos (GDK)."""
+    escala = monitor.get_scale_factor()
+    r, g = monitor.get_workarea(), monitor.get_geometry()
+    # o GDK fala em pixels logicos; as margens vem em pixels de verdade
+    esq, dir_, cima, baixo = (-(-m // escala) for m in margens_xfwm4())
+    x1, y1 = max(r.x, g.x + esq), max(r.y, g.y + cima)
+    x2 = min(r.x + r.width, g.x + g.width - dir_)
+    y2 = min(r.y + r.height, g.y + g.height - baixo)
+    if x2 - x1 < 200 or y2 - y1 < 150:
+        return r.x, r.y, r.width, r.height
+    return x1, y1, x2 - x1, y2 - y1
+
+
 def mover(janela: int, area: tuple[int, int, int, int], parte) -> None:
     ax, ay, aw, ah = area
     fx, fy, fw, fh = parte
@@ -175,9 +202,10 @@ class Quadro(Gtk.Window):
         else:
             monitor = tela.get_primary_monitor() or tela.get_monitor(0)
         escala = monitor.get_scale_factor()
-        r = monitor.get_workarea()
-        self.area = (r.x * escala, r.y * escala, r.width * escala, r.height * escala)
-        self.limite = (r.x, r.y, r.width, r.height)
+        lx, ly, lw, lh = area_util(monitor)
+        # o wmctrl fala em pixels de verdade; o quadro (GTK), em logicos
+        self.area = (lx * escala, ly * escala, lw * escala, lh * escala)
+        self.limite = (lx, ly, lw, lh)
         self.geo = geo
         self.escolhido = False
 

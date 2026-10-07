@@ -19,13 +19,33 @@ voltar ao que era antes.
 | 32 | cursores WhiteSur |
 | 33 | papéis de parede |
 | 34 | tema nos programas Qt |
-| 38 | barra única do topo |
+| 38 | barra única do topo (ou em ilhas) |
 | 40 | tema, fontes, botões e papel de parede |
 | 42 | cores do terminal |
 | 43 | atalhos de teclado |
 | 44 | encaixe de janelas |
+| 46 | efeitos (picom) |
 | 97 | tela de login |
 | 98 | bloqueio de tela |
+
+## Ilhas, picom e encaixe
+
+Vindos do [oasis-xfce](https://git.saberdl.dev.br/d3bian-temas/oasis-xfce), com os
+mesmos arquivos em `recursos/arquivos`:
+
+| Arquivo | O que faz |
+|---|---|
+| `paineis.py`, `tela.py` | montam o perfil das ilhas (`xfce4-panel-profiles load`) e dizem as margens do xfwm4, já na escala do Xfce |
+| `picom.conf`, `picom.sh` | o modelo do picom e o `d3bian-picom`, que inicia e para só o picom do projeto e religa o compositor do xfwm4 se ele cair |
+| `janelas.sh`, `layouts.py`, `bordas.py` | encaixe, layouts e bordas; descontam as margens do xfwm4 da área útil (o `_NET_WORKAREA` não conta painel solto) |
+
+Painel solto da borda só existe na posição livre (`p=0`), em que `x` e `y` são o
+centro do painel; por isso a ilha de baixo cresce com o dock (`length-adjust`) e
+fica sempre no centro. Os cantos vêm de um bloco no `gtk.css`
+(`#XfcePanelWindow { border-radius: 14px }`); o picom usa o mesmo raio. Comandos
+com o caminho da pasta pessoal levam aspas: no `Exec` do autostart, as da
+especificação do `.desktop` (`exec_desktop`); nos atalhos de teclado, aspas simples
+de shell.
 
 ## Imagens de exemplo
 

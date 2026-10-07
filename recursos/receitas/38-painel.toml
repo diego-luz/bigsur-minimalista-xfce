@@ -1,15 +1,106 @@
 [modulo]
 id = "38"
 nome = "painel"
-titulo = "Barra unica do topo, estilo macOS"
+titulo = "Barra unica do topo, estilo macOS (ou em ilhas)"
 requer = ["10"]
-afetada_por = ["tema", "logo"]
+afetada_por = ["tema", "logo", "ilhas", "destaque"]
 
 # Roda antes da aparencia de proposito: este passo reinicia o xfconfd, e um
 # ajuste gravado por outra receita logo antes correria o risco de se perder.
+#
+# Em ilhas (ilhas = sim, vindo do d3bian-init-oasis-xfce): a barra do topo
+# solta da borda e um dock com as janelas abertas numa ilha embaixo. Vao num
+# perfil do xfce4-panel-profiles (paineis.py) e entram com "load", que passa
+# pelo xfconfd. Ilha solta da borda nao reserva espaco na tela; as margens do
+# xfwm4 guardam esse espaco para as janelas maximizadas, e so entram depois
+# que o load deu certo. Mudou a resolucao ou a escala? Rode de novo so esta
+# etapa: aplicar --apenas painel.
 
+# ---- barra em ilhas ----------------------------------------------------------
 [[passo]]
 tipo = "script"
+se = "ilhas == sim"
+dizer = "montando a barra em ilhas"
+corpo = '''
+command -v xfce4-panel-profiles >/dev/null || { echo "falta o xfce4-panel-profiles"; exit 1; }
+perfil="$D3_ESTADO_DIR/painel-ilhas.tar.bz2"
+mkdir -p "$D3_ESTADO_DIR"
+
+# a barra de antes, inteira e uma vez so (como na barra unica, abaixo)
+antes="$D3_ESTADO_DIR/painel-antes.tar.bz2"
+if [ ! -f "$antes" ] && [ ! -f "$antes.sem" ]; then
+  xfce4-panel-profiles save "$antes" >/dev/null 2>&1 \
+    || { echo "atencao: nao consegui guardar a barra de antes"; : > "$antes.sem"; }
+fi
+
+# o logo do menu vai para a maquina, como na barra unica
+logo_dir="$(dirname "$D3_LOGO_ARQUIVO")"
+[ -d "$logo_dir" ] || d3_pasta "$logo_dir"
+[ -e "$D3_LOGO_ARQUIVO" ] || d3_criado "$D3_LOGO_ARQUIVO"
+install -Dm644 "$D3_LOGO_ORIGEM" "$D3_LOGO_ARQUIVO"
+
+# menu-opacity abaixo de 100 da ao menu uma janela com transparencia (a margem
+# transparente do WhiteSur), como na barra unica
+args=(--perfil "$perfil" --modo "$D3_TEMA" --menu icone --tarefas docklike
+      --favoritos "$D3_FAVORITOS" --relogio "%a %d %b  %H:%M" --destaque "$D3_DESTAQUE_COR"
+      --fundo-barra "$D3_ILHA_FUNDO_BARRA" --fundo-ilha "$D3_ILHA_FUNDO"
+      --menu-icone "$D3_LOGO_ARQUIVO"
+      --menu-extra menu-width:int:460 --menu-extra menu-height:int:560
+      --menu-extra menu-opacity:int:95 --menu-extra item-icon-size:int:2
+      --menu-extra category-icon-size:int:1
+      --menu-extra position-search-alternate:bool:true
+      --menu-extra position-commands-alternate:bool:true)
+
+# os favoritos do dock (docklike-N.rc) que o load escreve sao anotados antes,
+# para o desfazer saber o que e novo
+while IFS= read -r f; do
+  if [ -n "$f" ]; then d3_antes "$f"; fi
+done < <(python3 "$D3_ARQUIVOS/paineis.py" "${args[@]}" --listar)
+
+saida=$(python3 "$D3_ARQUIVOS/paineis.py" "${args[@]}")
+printf '%s\n' "$saida" | grep -v '^margens' || true
+
+# o plugin de energia esconde o icone proprio do xfce4-power-manager ao entrar
+# na barra; anotado para o desfazer devolver como era
+case "$saida" in
+  *power-manager-plugin*) d3_xfconf xfce4-power-manager /xfce4-power-manager/show-tray-icon bool ;;
+esac
+
+# o load troca o canal xfce4-panel inteiro pelo xfconfd, escreve os arquivos
+# dos plugins e pede ao painel que reinicie
+if ! xfce4-panel-profiles load "$perfil" 2>/dev/null | tail -3; then
+  echo "o xfce4-panel-profiles nao carregou as ilhas; as margens ficam como estavam"
+  exit 1
+fi
+
+# margens do xfwm4, so com as ilhas de pe: o espaco que as janelas maximizadas
+# respeitam. O paineis.py ja da em pixels de verdade (com a escala do Xfce)
+xfwm() {
+  d3_xfconf xfwm4 "/general/$1" "$2"
+  xfconf-query -c xfwm4 -p "/general/$1" -n -t "$2" -s "$3" 2>/dev/null \
+    || xfconf-query -c xfwm4 -p "/general/$1" -s "$3" 2>/dev/null || true
+}
+read -r cima baixo <<< "$(printf '%s\n' "$saida" | sed -n 's/^margens //p')"
+xfwm margin_top int "${cima:-0}"
+xfwm margin_bottom int "${baixo:-0}"
+# anotadas, para a barra unica saber quais margens foram postas pelas ilhas
+printf '%s %s\n' "${cima:-0}" "${baixo:-0}" > "$D3_ESTADO_DIR/margens-ilhas"
+# a sombra que o xfwm4 poe nos paineis e retangular e aparece nos cantos redondos
+xfwm show_dock_shadow bool false
+
+# painel parado (sessao sem ele): sobe agora
+sleep 3
+if [ -n "${DISPLAY:-}" ] && command -v xfce4-panel >/dev/null && ! pgrep -u "$(id -u)" -x xfce4-panel >/dev/null; then
+  setsid --fork xfce4-panel >/dev/null 2>&1 </dev/null
+  sleep 2
+fi
+echo "ilhas montadas; margens do xfwm4: em cima ${cima:-0}, embaixo ${baixo:-0}"
+'''
+
+# ---- barra unica -------------------------------------------------------------
+[[passo]]
+tipo = "script"
+se = "ilhas != sim"
 dizer = "montando a barra do topo"
 corpo = '''
 xml="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
@@ -175,8 +266,46 @@ sleep 2
 echo "barra montada com: $plugins"
 '''
 
+# saindo das ilhas: as margens e a sombra dos paineis que elas puseram voltam
+# ao que eram antes do projeto (o primeiro valor do diario); margem que a
+# pessoa mudou depois fica
+[[passo]]
+tipo = "script"
+se = "ilhas != sim"
+tolera_falha = true
+corpo = '''
+marcadas="$D3_ESTADO_DIR/margens-ilhas"
+[ -f "$marcadas" ] || exit 0
+antes() {  # antes CHAVE PADRAO: o valor do xfwm4 antes do projeto, pelo diario
+  CHAVE="$1" PADRAO="$2" PYTHONPATH="$D3_DIARIO_PAI" "$D3_DIARIO_PYTHON" -c '
+import importlib, os
+d = importlib.import_module(os.environ["D3_DIARIO_PACOTE"] + ".diario")
+for i in d.ler():
+    if i.get("tipo") == "xfconf" and i.get("canal") == "xfwm4" and i.get("chave") == os.environ["CHAVE"]:
+        print((i.get("valor") or "").strip() if i.get("existia") else os.environ["PADRAO"])
+        break
+else:
+    print(os.environ["PADRAO"])
+'
+}
+xfwm() {
+  d3_xfconf xfwm4 "/general/$1" "$2"
+  xfconf-query -c xfwm4 -p "/general/$1" -n -t "$2" -s "$3" 2>/dev/null \
+    || xfconf-query -c xfwm4 -p "/general/$1" -s "$3" 2>/dev/null || true
+}
+read -r cima baixo < "$marcadas"
+atual=$(xfconf-query -c xfwm4 -p /general/margin_top 2>/dev/null || echo 0)
+if [ "$atual" = "${cima:-x}" ]; then xfwm margin_top int "$(antes /general/margin_top 0)"; fi
+atual=$(xfconf-query -c xfwm4 -p /general/margin_bottom 2>/dev/null || echo 0)
+if [ "$atual" = "${baixo:-x}" ]; then xfwm margin_bottom int "$(antes /general/margin_bottom 0)"; fi
+xfwm show_dock_shadow bool "$(antes /general/show_dock_shadow true)"
+rm -f "$marcadas"
+echo "margens das ilhas tiradas"
+'''
+
 [[passo]]
 tipo = "bloco"
+se = "ilhas != sim"
 dizer = "cor do texto e folga entre os itens da barra"
 destino = "~/.config/gtk-3.0/gtk.css"
 marca = "d3bian-init-minimalista painel"
@@ -189,6 +318,30 @@ conteudo = '''
 .xfce4-panel.background image { color: @@painel_texto@@; }
 .xfce4-panel button,
 .xfce4-panel widget { padding-left: 5px; padding-right: 5px; }
+'''
+
+# ilhas: cantos redondos, texto legivel e botoes macios; o fundo translucido
+# vem do proprio painel (background-rgba). Com o picom, o desfoque e os cantos
+# dele usam o mesmo raio
+[[passo]]
+tipo = "bloco"
+se = "ilhas == sim"
+dizer = "cantos e cores das ilhas"
+destino = "~/.config/gtk-3.0/gtk.css"
+marca = "d3bian-init-minimalista painel"
+conteudo = '''
+/* O WhiteSur pinta o texto da barra sempre de branco; a regra da cor vale aqui
+   tambem. So a janela do painel; os plugins que rodam fora dele (menu, som, dock)
+   tambem tem .xfce4-panel.background e ficariam redondos um a um */
+#XfcePanelWindow { border-radius: @@raio@@px; }
+.xfce4-panel.background:not(#XfcePanelWindow) { border-radius: 0; }
+.xfce4-panel.background,
+.xfce4-panel.background label,
+.xfce4-panel.background button label,
+.xfce4-panel.background image { color: @@painel_texto@@; }
+.xfce4-panel.background button { border-radius: 10px; padding-left: 6px; padding-right: 6px; }
+.xfce4-panel.background button:hover { background-color: @@painel_hover@@; }
+.xfce4-panel.background button:checked { background-color: @@destaque_suave@@; }
 '''
 
 [[desfazer]]

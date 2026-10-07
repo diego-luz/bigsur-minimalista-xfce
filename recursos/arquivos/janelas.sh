@@ -4,12 +4,12 @@
 # O xfwm4 ja faz metades e quartos sozinho, e os atalhos usam isso. Este script
 # cobre o que ele nao faz: centralizar e dividir em tercos.
 #
-#   bigsur-janelas centro          centraliza ocupando 72% da tela
-#   bigsur-janelas quase-cheia     ocupa 92%, com respiro nas bordas
-#   bigsur-janelas 2-3-esquerda    dois tercos a esquerda
-#   bigsur-janelas 1-3-direita     um terco a direita
-#   bigsur-janelas 2-3-direita     dois tercos a direita
-#   bigsur-janelas 1-3-esquerda    um terco a esquerda
+#   d3bian-janelas centro          centraliza ocupando 72% da tela
+#   d3bian-janelas quase-cheia     ocupa 92%, com respiro nas bordas
+#   d3bian-janelas 2-3-esquerda    dois tercos a esquerda
+#   d3bian-janelas 1-3-direita     um terco a direita
+#   d3bian-janelas 2-3-direita     dois tercos a direita
+#   d3bian-janelas 1-3-esquerda    um terco a esquerda
 set -u
 
 comando="${1:-}"
@@ -20,13 +20,34 @@ for exigido in wmctrl xprop; do
 done
 
 # Area util: a tela menos o painel e o dock. Vem em x, y, largura, altura.
+# Painel solto da borda (as ilhas) nao reserva espaco e fica fora do
+# _NET_WORKAREA; quem guarda o lugar dele sao as margens do xfwm4, em pixels de
+# verdade como o _NET_WORKAREA. A area e o que sobra dos dois.
+margem(){
+  local v
+  v="$(xfconf-query -c xfwm4 -p "/general/margin_$1" 2>/dev/null || true)"
+  case "$v" in ''|*[!0-9]*) echo 0 ;; *) echo "$v" ;; esac
+}
 leia_area(){
-  local bruto
+  local bruto tw th mc mb me md
   bruto="$(xprop -root -notype _NET_WORKAREA 2>/dev/null | sed 's/.*= //;s/,//g')"
   # shellcheck disable=SC2086
   set -- $bruto
   AX="${1:-0}"; AY="${2:-0}"; AW="${3:-0}"; AH="${4:-0}"
   [ "${AW:-0}" -gt 0 ] || { echo "nao consegui ler a area util da tela"; exit 1; }
+  bruto="$(xprop -root -notype _NET_DESKTOP_GEOMETRY 2>/dev/null | sed 's/.*= //;s/,//g')"
+  # shellcheck disable=SC2086
+  set -- $bruto
+  tw="${1:-0}"; th="${2:-0}"
+  case "$tw$th" in *[!0-9]*|"") tw=$(( AX + AW )); th=$(( AY + AH )) ;; esac
+  mc=$(margem top); mb=$(margem bottom); me=$(margem left); md=$(margem right)
+  local x2=$(( AX + AW )) y2=$(( AY + AH ))
+  [ "$AX" -lt "$me" ] && AX=$me
+  [ "$AY" -lt "$mc" ] && AY=$mc
+  [ "$x2" -gt $(( tw - md )) ] && x2=$(( tw - md ))
+  [ "$y2" -gt $(( th - mb )) ] && y2=$(( th - mb ))
+  AW=$(( x2 - AX )); AH=$(( y2 - AY ))
+  [ "$AW" -gt 0 ] && [ "$AH" -gt 0 ] || { echo "a area util ficou vazia (margens do xfwm4?)"; exit 1; }
 }
 
 # A moldura da janela entra na conta, senao ela passa da borda.

@@ -2,7 +2,7 @@
 id = "10"
 nome = "pacotes"
 titulo = "Pacotes do repositorio Debian"
-afetada_por = []
+afetada_por = ["ilhas", "efeitos"]
 
 [[passo]]
 tipo = "comando"
@@ -34,3 +34,20 @@ pacotes = ["xfce4-panel-profiles", "python3-gi", "xfce4-whiskermenu-plugin", "xf
 tipo = "apt"
 dizer = "tela de login e fontes"
 pacotes = ["lightdm-gtk-greeter", "librsvg2-bin", "light-locker", "fonts-inter", "fonts-firacode", "fonts-noto-color-emoji"]
+
+# o dock da ilha de baixo, so com a barra em ilhas
+[[passo]]
+tipo = "apt"
+se = "ilhas == sim"
+dizer = "dock da barra em ilhas"
+pacotes = ["xfce4-docklike-plugin"]
+
+# efeitos (vindo do d3bian-init-oasis-xfce): o mesa-utils traz o glxinfo, que
+# diz se o video tem aceleracao (sem ela o picom fica em modo leve, sem
+# desfoque); o xprop (x11-utils, acima) e como o d3bian-picom sabe se a tela
+# ainda esta de pe quando o picom sai
+[[passo]]
+tipo = "apt"
+se = "efeitos != desligado"
+dizer = "picom para desfoque, sombras e cantos"
+pacotes = ["picom", "mesa-utils", "x11-utils"]

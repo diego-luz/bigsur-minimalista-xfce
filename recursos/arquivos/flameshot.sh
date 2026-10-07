@@ -18,8 +18,22 @@ if ! command -v flameshot >/dev/null; then
   exit 1
 fi
 
+# o que muda aqui entra no diario do projeto, como nas receitas: o "Voltar ao
+# que era antes" devolve o atalho, o autostart e o flameshot.ini. Este arquivo
+# fica em <pacote>/recursos/arquivos
+pacote=$(cd "$(dirname "$0")/../.." && pwd)
+anotar() {
+  PYTHONPATH="$(dirname "$pacote")${PYTHONPATH:+:$PYTHONPATH}" D3_RECEITA=programas \
+    python3 -m "$(basename "$pacote").diario" "$@" >/dev/null 2>&1 || true
+}
+
+# o comando do atalho passa pelo g_shell_parse_argv: o caminho vai entre
+# aspas simples, para a pasta pessoal com espaco
+q() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+
 echo "criando o atalho de captura"
 mkdir -p "$HOME/.local/bin"
+anotar antes "$HOME/.local/bin/d3bian-captura"
 cat > "$HOME/.local/bin/d3bian-captura" <<'FIM'
 #!/bin/sh
 # Print Screen: o Flameshot quando instalado, senao o capturador do XFCE
@@ -31,8 +45,11 @@ FIM
 chmod +x "$HOME/.local/bin/d3bian-captura"
 
 echo "Print Screen passa a abrir o Flameshot"
+anotar xfconf xfce4-keyboard-shortcuts /commands/custom/Print string
 xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/Print" \
-  -n -t string -s "$HOME/.local/bin/d3bian-captura"
+  -n -t string -s "$(q "$HOME/.local/bin/d3bian-captura")" 2>/dev/null \
+  || xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/Print" \
+       -s "$(q "$HOME/.local/bin/d3bian-captura")"
 
 # O mesmo nome e conteudo que o proprio Flameshot grava quando se marca
 # "Iniciar com o sistema" nas configuracoes dele; assim a caixinha de la
@@ -40,6 +57,7 @@ xfconf-query -c xfce4-keyboard-shortcuts -p "/commands/custom/Print" \
 # programa for removido.
 echo "abrindo o Flameshot junto com a sessao"
 mkdir -p "$HOME/.config/autostart"
+anotar antes "$HOME/.config/autostart/Flameshot.desktop"
 cat > "$HOME/.config/autostart/Flameshot.desktop" <<'FIM'
 [Desktop Entry]
 Name=flameshot
@@ -54,6 +72,8 @@ FIM
 # startupLaunch acompanha o autostart acima; o aviso de "ja esta rodando" a
 # cada inicio so atrapalha quando ele abre sozinho
 ini="$HOME/.config/flameshot/flameshot.ini"
+anotar pasta "$(dirname "$ini")"
+anotar antes "$ini"
 mkdir -p "$(dirname "$ini")"
 [ -f "$ini" ] || printf '[General]\n' > "$ini"
 grep -q '^\[General\]' "$ini" || printf '[General]\n' >> "$ini"
@@ -69,6 +89,7 @@ ini_chave showStartupLaunchMessage false
 
 # ja deixa rodando nesta sessao, sem esperar o proximo login
 if [ -n "${DISPLAY:-}" ] && ! pgrep -u "$(id -u)" -x flameshot >/dev/null; then
+  anotar processo flameshot
   setsid -f flameshot >/dev/null 2>&1 </dev/null || true
 fi
 

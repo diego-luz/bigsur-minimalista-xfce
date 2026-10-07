@@ -115,10 +115,45 @@ dizer = "arquivos de tema para programas que nao leem o xsettings"
 destino = "~/.config/gtk-3.0/settings.ini"
 modelo = "gtk3-settings.ini"
 
+# GTK 2: um bloco marcado no ~/.gtkrc-2.0, que o desfazer tira (e apaga o
+# arquivo se ele so existia pelo projeto). A versao anterior escrevia o arquivo
+# inteiro com estas mesmas linhas, sem marca; esse arquivo sai antes, e o
+# diario dele (copia de antes, ou criado) continua valendo no desfazer
 [[passo]]
-tipo = "arquivo"
+tipo = "script"
+corpo = '''
+f="$HOME/.gtkrc-2.0"
+[ -f "$f" ] && [ ! -L "$f" ] || exit 0
+grep -qxF "# d3bian-init-minimalista" "$f" && exit 0
+linhas=$(grep -c . "$f" || true)
+nossas=$(grep -cxE 'gtk-(theme|icon-theme|cursor-theme|font)-name="[^"]*"|gtk-cursor-theme-size=[0-9]+' "$f" || true)
+# so o que o diario diz que o projeto escreveu (um arquivo da pessoa com as
+# mesmas linhas fica)
+escrito=$(ARQ="$f" PYTHONPATH="$D3_DIARIO_PAI" "$D3_DIARIO_PYTHON" -c '
+import importlib, os
+d = importlib.import_module(os.environ["D3_DIARIO_PACOTE"] + ".diario")
+print("sim" if any(i.get("tipo") in ("criado", "alterado") and i.get("caminho") == os.environ["ARQ"]
+                   for i in d.ler()) else "nao")
+')
+if [ "$escrito" = sim ] && [ "$linhas" -gt 0 ] && [ "$linhas" = "$nossas" ]; then
+  d3_antes "$f"
+  rm -f "$f"
+  echo "~/.gtkrc-2.0 da versao anterior trocado por um bloco marcado"
+fi
+'''
+
+[[passo]]
+tipo = "bloco"
 destino = "~/.gtkrc-2.0"
-modelo = "gtkrc-2.0"
+comentario = "#"
+marca = "d3bian-init-minimalista"
+conteudo = '''
+gtk-theme-name="@@gtk_tema@@"
+gtk-icon-theme-name="@@icones@@"
+gtk-cursor-theme-name="@@cursores@@"
+gtk-cursor-theme-size=24
+gtk-font-name="@@fonte_ui@@ 10"
+'''
 
 # o valor de antes das tres chaves abaixo, para o desfazer
 [[passo]]

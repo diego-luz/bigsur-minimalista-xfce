@@ -36,6 +36,10 @@ python3 -m d3bian_init_bigsur_minimalista_xfce        # pede a senha uma vez e a
 - **Ícones e cursores WhiteSur**, e o tema também nos programas Qt (Kvantum)
 - **Barra única no topo**, com menu, bandeja, som, bateria, relógio e sair; o logo do canto à escolha
 - **Encaixe de janelas** por atalho, bordas mais largas e layouts no Super+Z
+- **Barra em ilhas**, se quiser: a barra do topo solta da borda e um dock numa ilha
+  embaixo, com cantos redondos (vinda do [oasis-xfce](https://git.saberdl.dev.br/d3bian-temas/oasis-xfce))
+- **Efeitos com o picom**, se quiser: sombras, cantos redondos e desfoque, em modo
+  leve onde não há aceleração de vídeo
 - **Papéis de parede** do WhiteSur numa galeria, ou o seu
 - **Tela de login e de bloqueio** combinando, com fundo desfocado
 - **Programas úteis**: uma lista pronta do repositório oficial do Debian, conforme o hardware
@@ -43,7 +47,8 @@ python3 -m d3bian_init_bigsur_minimalista_xfce        # pede a senha uma vez e a
 
 Sem dock, sem compositor extra e sem Conky: quatro pacotes a menos que o
 [bigsur completo](https://git.saberdl.dev.br/d3bian-temas/bigsur-xfce) e nenhum processo
-permanente além do painel.
+permanente além do painel. As ilhas e o picom vêm desligados; ligados, entram o dock
+e o picom.
 
 <!-- imagens: gerado a partir do teste num Debian 13; refazer, nao editar a mao -->
 ## Telas
@@ -51,6 +56,10 @@ permanente além do painel.
 | Com outras opções da página |
 |---|
 | ![Com outras opções da página](docs/imagens/resultado-opcao.jpg) |
+
+| Barra em ilhas, com o picom (`ilhas = sim`, `efeitos = desfoque`) |
+|---|
+| ![Barra em ilhas, com o picom](docs/imagens/resultado-ilhas.jpg) |
 
 | Início | Opções | Programas úteis |
 |---|---|---|

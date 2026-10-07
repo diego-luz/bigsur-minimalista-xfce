@@ -53,7 +53,18 @@ OPCOES: tuple[Opcao, ...] = (
           ("debian", "debian-cor", "tux", "tux-cor"),
           "Logo do canto", "Botao que abre o menu de aplicativos"),
     Opcao("janelas", "sim", SIM_NAO,
-          "Encaixe de janelas", "Bordas mais largas, atalhos e layouts no Super+Z"),
+          "Encaixe de janelas",
+          "Super e setas para metades, Super+1 a 4 para quartos, layouts no Super+Z e "
+          "bordas mais largas; respeita o espaco das ilhas"),
+    # vindos do oasis-xfce; desligados, a barra continua a de sempre
+    Opcao("ilhas", "nao", SIM_NAO,
+          "Barra em ilhas",
+          "A barra do topo solta da borda, com cantos redondos, e um dock com as "
+          "janelas abertas numa ilha embaixo"),
+    Opcao("efeitos", "desligado", ("desligado", "sombras", "desfoque"),
+          "Efeitos (picom)",
+          "Sombras e cantos redondos nas janelas, e desfoque atras do que e translucido. "
+          "Sem aceleracao de video (VM sem 3D) o picom roda leve, sem desfoque"),
     # numa maquina recem instalada nao ha papel de parede a preservar, entao o
     # padrao e o do tema; quem ja escolheu o seu troca para "manter"
     # alem de manter e do-tema, aceita o nome de um arquivo da galeria

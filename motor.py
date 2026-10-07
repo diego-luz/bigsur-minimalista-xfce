@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 from typing import Callable, Iterable
 
-from . import caminhos, diario, estado, papeis, sistema
+from . import caminhos, diario, estado, ilhas, papeis, sistema
 
 Saida = Callable[[str], None]
 
@@ -117,6 +117,8 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
         # anotacoes para consulta ficam aqui, fora da pasta de backup
         "estado_dir": str(caminhos.ESTADO_DIR),
     })
+    # barra em ilhas e picom (vindos do oasis-xfce): cores e o picom.conf
+    ctx.update(ilhas.contexto(cfg))
     return ctx
 
 

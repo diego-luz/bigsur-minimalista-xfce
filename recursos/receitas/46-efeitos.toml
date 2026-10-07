@@ -1,0 +1,146 @@
+[modulo]
+id = "46"
+nome = "efeitos"
+titulo = "Desfoque, sombras e cantos (picom)"
+requer = ["10"]
+# o raio e o que fica de fora do arredondamento dependem da barra (ilhas ou nao)
+afetada_por = ["efeitos", "ilhas"]
+
+# Vindo do d3bian-init-oasis-xfce.
+#
+# Com o picom ligado, o compositor do xfwm4 fica desligado (os dois juntos
+# brigam pela tela). Sem aceleracao de video (VM sem 3D, llvmpipe) o picom.conf
+# sai em modo leve: backend xrender, sem desfoque nem vsync. O picom com glx
+# numa VM sem 3D costuma deixar as janelas sem redesenhar.
+
+# ---- desligado: volta o compositor do Xfce ----------------------------------
+# so o picom deste projeto para (o d3bian-picom acha pela linha de comando
+# exata); um picom aberto pela pessoa, com outra configuracao, fica
+[[passo]]
+tipo = "script"
+se = "efeitos == desligado"
+dizer = "desligando o picom deste projeto"
+tolera_falha = true
+corpo = '''
+if [ -f "$HOME/.config/autostart/d3bian-minimalista-picom.desktop" ] || sh "$D3_ARQUIVOS/picom.sh" rodando; then
+  sh "$D3_ARQUIVOS/picom.sh" parar
+  echo "picom parado"
+fi
+'''
+
+[[passo]]
+tipo = "autostart"
+se = "efeitos == desligado"
+id = "d3bian-minimalista-picom"
+remover = true
+
+# o compositor do xfwm4 volta ao que era antes do projeto (o valor que o diario
+# guardou quando o picom ligou); sem nada no diario, o projeto nunca mexeu nele
+[[passo]]
+tipo = "script"
+se = "efeitos == desligado"
+dizer = "@@picom_aviso@@"
+tolera_falha = true
+corpo = '''
+antes=$(PYTHONPATH="$D3_DIARIO_PAI" "$D3_DIARIO_PYTHON" - <<'PY'
+import importlib, os
+d = importlib.import_module(os.environ["D3_DIARIO_PACOTE"] + ".diario")
+for i in d.ler():
+    if i.get("tipo") == "xfconf" and i.get("canal") == "xfwm4" and i.get("chave") == "/general/use_compositing":
+        # o primeiro e o de antes do projeto; sem a propriedade, o padrao do xfwm4 e ligado
+        print((i.get("valor") or "").strip() if i.get("existia") else "true")
+        break
+PY
+)
+case "$antes" in
+  true|false)
+    d3_xfconf xfwm4 /general/use_compositing bool
+    xfconf-query -c xfwm4 -p /general/use_compositing -n -t bool -s "$antes" 2>/dev/null \
+      || xfconf-query -c xfwm4 -p /general/use_compositing -s "$antes" 2>/dev/null || true
+    echo "compositor do xfwm4: $antes, como era antes do picom"
+    ;;
+esac
+rm -f "$HOME/.local/bin/d3bian-picom"
+'''
+
+# ---- ligado ------------------------------------------------------------------
+[[passo]]
+tipo = "arquivo"
+se = "efeitos != desligado"
+dizer = "@@picom_aviso@@"
+destino = "~/.config/picom/picom.conf"
+modelo = "picom.conf"
+
+# o autostart chama o d3bian-picom, e nao o picom direto: se o picom nao ficar
+# de pe ao entrar na sessao, ele religa o compositor do xfwm4
+[[passo]]
+tipo = "copiar"
+se = "efeitos != desligado"
+origem = "@@arquivos@@/picom.sh"
+destino = "~/.local/bin/d3bian-picom"
+
+[[passo]]
+tipo = "comando"
+se = "efeitos != desligado"
+tolera_falha = true
+argumentos = ["chmod", "755", "@@HOME@@/.local/bin/d3bian-picom"]
+
+[[passo]]
+tipo = "autostart"
+se = "efeitos != desligado"
+id = "d3bian-minimalista-picom"
+nome = "picom (d3bian-init-bigsur-minimalista-xfce)"
+comando = "@@picom_exec@@"
+
+[[passo]]
+tipo = "xfconf"
+se = "efeitos != desligado"
+dizer = "desligando o compositor do xfwm4 enquanto o picom roda"
+canal = "xfwm4"
+chave = "/general/use_compositing"
+tipo_valor = "bool"
+valor = "false"
+
+# inicia agora, na sessao aberta. Se o picom nao ficar de pe, o d3bian-picom
+# devolve o compositor do xfwm4, para a tela nao ficar sem transparencia nenhuma
+[[passo]]
+tipo = "script"
+se = "efeitos != desligado"
+dizer = "iniciando o picom nesta sessao"
+tolera_falha = true
+corpo = '''
+if [ -z "${DISPLAY:-}" ]; then
+  echo "sem sessao grafica aqui; o picom inicia na proxima entrada"
+  exit 0
+fi
+command -v picom >/dev/null || { echo "atencao: o picom nao esta instalado"; exit 0; }
+p="$HOME/.local/bin/d3bian-picom"
+# o deste projeto reinicia, para ler o picom.conf novo
+"$p" parar
+if pgrep -u "$(id -u)" -x picom >/dev/null; then
+  echo "atencao: ja ha um picom aberto fora deste projeto; ele fica, e o deste inicia na proxima entrada"
+  exit 0
+fi
+# o xfwm4 solta a tela um pouco depois de desligar o compositor dele
+sleep 1
+setsid --fork "$p" >/dev/null 2>&1 </dev/null
+sleep 2
+if "$p" rodando; then
+  echo "picom rodando"
+else
+  echo "atencao: o picom nao ficou de pe; o compositor do xfwm4 voltou. Teste com: picom --config ~/.config/picom/picom.conf"
+fi
+'''
+
+# roda antes do diario: para o picom deste projeto; o diario tira o autostart e
+# devolve o compositor do xfwm4 como estava
+[[desfazer]]
+tipo = "script"
+dizer = "parando o picom"
+tolera_falha = true
+corpo = '''
+if [ -f "$HOME/.config/autostart/d3bian-minimalista-picom.desktop" ] || sh "$D3_ARQUIVOS/picom.sh" rodando; then
+  sh "$D3_ARQUIVOS/picom.sh" parar
+  echo "picom parado"
+fi
+'''

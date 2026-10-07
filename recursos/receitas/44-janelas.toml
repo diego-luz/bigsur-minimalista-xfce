@@ -112,10 +112,13 @@ atalho '/xfwm4/custom/<Super>1'     tile_up_left_key
 atalho '/xfwm4/custom/<Super>2'     tile_up_right_key
 atalho '/xfwm4/custom/<Super>3'     tile_down_left_key
 atalho '/xfwm4/custom/<Super>4'     tile_down_right_key
-j="$HOME/.local/bin/d3bian-janelas"
+# o comando do atalho passa pelo g_shell_parse_argv: o caminho vai entre
+# aspas simples, para a pasta pessoal com espaco ("/home/joao silva")
+q(){ printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+j=$(q "$HOME/.local/bin/d3bian-janelas")
 atalho '/commands/custom/<Super>c'            "$j centro"
 atalho '/commands/custom/<Super>x'            "$j quase-cheia"
-atalho '/commands/custom/<Super>z'            "$HOME/.local/bin/d3bian-layouts"
+atalho '/commands/custom/<Super>z'            "$(q "$HOME/.local/bin/d3bian-layouts")"
 atalho '/commands/custom/<Super><Shift>Left'  "$j 2-3-esquerda"
 atalho '/commands/custom/<Super><Shift>Right' "$j 1-3-direita"
 echo "Super e setas para metades, Super e 1 a 4 para quartos, Super+C centraliza, Super+Z abre os layouts"

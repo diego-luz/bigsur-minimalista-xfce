@@ -15,6 +15,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import time
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -476,6 +477,14 @@ class Motor:
             diario.antes_do_processo(nome, self.receita)
         if acao in ("parar", "reiniciar"):
             subprocess.run(["pkill", "-x", nome], capture_output=True)
+            # espera o antigo sair: o plank (e outros de instancia unica) que
+            # sobe antes disso nao consegue o nome no D-Bus e sai, e o
+            # antigo morre logo depois, ficando nenhum
+            for _ in range(50):
+                if subprocess.run(["pgrep", "-x", "-u", str(os.getuid()), nome],
+                                  capture_output=True).returncode != 0:
+                    break
+                time.sleep(0.1)
         if acao in ("iniciar", "reiniciar"):
             argumentos = [str(x) for x in resolver(p.get("argumentos", [nome]), self.ctx)]
             try:

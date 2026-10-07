@@ -18,9 +18,12 @@ mkdir -p "$(dirname "$xml")"
 # a barra de antes, inteira e uma vez so: o [[desfazer]] devolve com
 # xfce4-panel-profiles load, que tambem traz os arquivos dos plugins
 antes="$D3_ESTADO_DIR/painel-antes.tar.bz2"
-if [ ! -f "$antes" ] && command -v xfce4-panel-profiles >/dev/null; then
+# se nao der para guardar, fica a marca: numa rodada seguinte a barra ja e a
+# do projeto, e guardar essa como "a de antes" faria o desfazer devolve-la
+if [ ! -f "$antes" ] && [ ! -f "$antes.sem" ] && command -v xfce4-panel-profiles >/dev/null; then
   mkdir -p "$D3_ESTADO_DIR"
-  xfce4-panel-profiles save "$antes" >/dev/null 2>&1 || echo "atencao: nao consegui guardar a barra de antes"
+  xfce4-panel-profiles save "$antes" >/dev/null 2>&1 \
+    || { echo "atencao: nao consegui guardar a barra de antes"; : > "$antes.sem"; }
 fi
 
 # uma barra so, com o essencial: menu, bandeja, som, bateria, relogio e sair
@@ -31,10 +34,22 @@ logo_dir="$(dirname "$D3_LOGO_ARQUIVO")"
 [ -e "$D3_LOGO_ARQUIVO" ] || d3_criado "$D3_LOGO_ARQUIVO"
 install -Dm644 "$D3_LOGO_ORIGEM" "$D3_LOGO_ARQUIVO"
 
-plugins="whiskermenu separador-expande systray separador pulseaudio separador power-manager-plugin separador clock separador actions"
+plugins="whiskermenu separador-expande"
+# bandeja, som e bateria so entram se o plugin existir: um id sem .desktop faz
+# o painel abrir a janela "plugin nao pode ser carregado" a cada entrada
+for p in systray pulseaudio power-manager-plugin; do
+  if [ -f "/usr/share/xfce4/panel/plugins/$p.desktop" ]; then
+    plugins="$plugins $p separador"
+  else
+    echo "plugin $p ausente, barra montada sem ele"
+  fi
+done
+plugins="$plugins clock separador actions"
 # o plugin de energia esconde o icone proprio do xfce4-power-manager ao entrar
 # na barra; anotado para o desfazer devolver como era
-d3_xfconf xfce4-power-manager /xfce4-power-manager/show-tray-icon bool
+case " $plugins " in
+  *" power-manager-plugin "*) d3_xfconf xfce4-power-manager /xfce4-power-manager/show-tray-icon bool ;;
+esac
 
 set -- $D3_PAINEL_FUNDO
 pr="$1"; pg="$2"; pb="$3"; pa="$4"
@@ -183,9 +198,14 @@ tolera_falha = true
 corpo = '''
 antes="$D3_ESTADO_DIR/painel-antes.tar.bz2"
 if [ -f "$antes" ] && command -v xfce4-panel-profiles >/dev/null; then
-  xfce4-panel-profiles load "$antes" >/dev/null 2>&1 && echo "barra de antes carregada" \
-    || echo "atencao: o xfce4-panel-profiles nao carregou a barra de antes"
+  # carregada, sai: a proxima instalacao guarda a barra de entao
+  if xfce4-panel-profiles load "$antes" >/dev/null 2>&1; then
+    echo "barra de antes carregada"; rm -f "$antes"
+  else
+    echo "atencao: o xfce4-panel-profiles nao carregou a barra de antes"
+  fi
 else
   echo "atencao: sem copia da barra de antes; ela fica como esta"
 fi
+rm -f "$antes.sem"
 '''

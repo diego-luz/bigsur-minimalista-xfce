@@ -22,12 +22,15 @@ tipo = "apt"
 dizer = "motores graficos que o tema precisa"
 pacotes = ["gtk2-engines-murrine", "gnome-themes-extra", "libglib2.0-bin"]
 
+# o xfce4-panel-profiles do Debian nao puxa o python3-gi, sem o qual ele nem abre
 [[passo]]
 tipo = "apt"
 dizer = "componentes do desktop"
-pacotes = ["xfce4-panel-profiles", "xfce4-whiskermenu-plugin", "xfce4-screenshooter"]
+pacotes = ["xfce4-panel-profiles", "python3-gi", "xfce4-whiskermenu-plugin", "xfce4-screenshooter"]
 
+# o convert so le o logo em svg (a foto da tela de login) pelo rsvg-convert:
+# instalado sem os recomendados, o imagemagick nao traz quem leia svg
 [[passo]]
 tipo = "apt"
 dizer = "tela de login e fontes"
-pacotes = ["lightdm-gtk-greeter", "light-locker", "fonts-inter", "fonts-firacode", "fonts-noto-color-emoji"]
+pacotes = ["lightdm-gtk-greeter", "librsvg2-bin", "light-locker", "fonts-inter", "fonts-firacode", "fonts-noto-color-emoji"]

@@ -165,6 +165,11 @@ APAGAVEIS_FORA_DE_CASA = {
 RESTAURAVEIS_FORA_DE_CASA = APAGAVEIS_FORA_DE_CASA - {str(caminhos.BACKUP_SISTEMA)}
 
 
+# arquivos soltos na casa que as receitas criam; o desfazer apaga o que ele
+# mesmo criou (o diario diz), e nada mais logo abaixo da casa
+ARQUIVOS_DA_CASA = frozenset({".gtkrc-2.0", ".xprofile", ".xsessionrc"})
+
+
 def _apagavel(caminho: Path) -> bool:
     bruto = str(caminho)
     # caminho normalizado e sem "..": a lista fica numa pasta do usuario
@@ -174,7 +179,14 @@ def _apagavel(caminho: Path) -> bool:
     if caminho.is_relative_to(casa):
         real = Path(os.path.realpath(caminho))
         # nunca a casa inteira nem uma pasta logo abaixo dela (Documentos, .config...)
-        return real.is_relative_to(casa) and len(real.relative_to(casa).parts) >= 2
+        if not real.is_relative_to(casa):
+            return False
+        partes = real.relative_to(casa).parts
+        if len(partes) == 1:
+            # logo na casa, so os arquivos comuns que as receitas escrevem
+            return (partes[0] in ARQUIVOS_DA_CASA and caminho.is_file()
+                    and not caminho.is_symlink())
+        return len(partes) >= 2
     return bruto in APAGAVEIS_FORA_DE_CASA
 
 

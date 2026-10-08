@@ -77,6 +77,8 @@ OPCOES: tuple[Opcao, ...] = (
           livre=r"[A-Za-z0-9][A-Za-z0-9._-]{0,80}"),
     Opcao("login_desfoque", "sim", SIM_NAO,
           "Fundo desfocado", "A imagem fica embacada atras dos campos, como no macOS"),
+    Opcao("login_escurecer", "10", ("0", "10", "20", "30", "40", "50", "60"),
+          "Escurecer o fundo", "Quanto o fundo fica mais escuro atras dos campos: 0 mostra a imagem como ela e"),
     Opcao("login_usuarios", "campos", ("campos", "lista"),
           "Como entrar", "Digitar nome e senha, ou escolher o usuario numa lista"),
     # o padrao repete o que o Debian ja faz com o light-locker: a tela apaga

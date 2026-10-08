@@ -4,7 +4,7 @@ nome = "login"
 titulo = "Tela de login e de bloqueio"
 requer = ["30"]
 afetada_por = ["destaque", "papel_de_parede",
-               "login_fundo", "login_desfoque", "login_usuarios"]
+               "login_fundo", "login_desfoque", "login_escurecer", "login_usuarios"]
 
 # Os arquivos sao montados primeiro em @@login_dir@@, uma pasta nova e fechada
 # (0700) que receitas.py cria a cada execucao e apaga no fim, e so depois
@@ -65,14 +65,18 @@ rm -f "$d/fundo.jpg" "$d/avatar.png"
 
 origem="$D3_LOGIN_FUNDO_ARQUIVO"
 if [ -n "$origem" ] && [ -f "$origem" ]; then
+  # o quanto escurecer o fundo atras do texto branco e a pessoa quem diz
+  esc="${D3_LOGIN_ESCURECER:-10}"
+  case "$esc" in ''|*[!0-9]*) esc=10 ;; esac
+  [ "$esc" -le 90 ] || esc=90
   if [ "$D3_LOGIN_DESFOQUE" = "sim" ]; then
     # reduzir antes de desfocar deixa o desfoque rapido; o greeter estica de volta
-    convert "$origem[0]" -resize '1920x1200^' -blur 0x24 -fill black -colorize 14% \
+    convert "$origem[0]" -resize '1920x1200^' -blur 0x24 -fill black -colorize "$esc%" \
             -quality 88 "$d/fundo.jpg"
   else
-    convert "$origem[0]" -resize '2560x1600>' -quality 90 "$d/fundo.jpg"
+    convert "$origem[0]" -resize '2560x1600>' -fill black -colorize "$esc%" -quality 90 "$d/fundo.jpg"
   fi
-  echo "fundo: $(basename "$origem")$([ "$D3_LOGIN_DESFOQUE" = "sim" ] && echo ', desfocado')"
+  echo "fundo: $(basename "$origem")$([ "$D3_LOGIN_DESFOQUE" = "sim" ] && echo ', desfocado'), escurecido $esc%"
 else
   convert -size 1920x1200 gradient:'#2a3a52'-'#0b0f16' "$d/fundo.jpg"
   echo "nao achei imagem de fundo; usando um degrade escuro"

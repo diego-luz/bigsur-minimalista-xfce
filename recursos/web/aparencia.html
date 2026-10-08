@@ -192,7 +192,7 @@ const APLICAR = ["#btAplicar", "#btAplicarLogin"];
 let EXEMPLOS = null;
 let proprias = [];
 // estas ficam no cartao da tela de login; as galerias tem desenho proprio
-const DO_LOGIN = ["login_usuarios", "login_desfoque", "bloqueio"];
+const DO_LOGIN = ["login_usuarios", "login_desfoque", "login_escurecer", "bloqueio"];
 const COM_GALERIA = ["papel_de_parede", "login_fundo"];
 const ROTULOS = {};
 
@@ -261,6 +261,7 @@ const NOMES = {sim: "Com", nao: "Sem", claro: "Claro", escuro: "Escuro",
 const NOMES_POR_CHAVE = {
   bloqueio: {nao: "Nunca", 5: "5 minutos", 10: "10 minutos", 15: "15 minutos", 30: "30 minutos"},
   login_desfoque: {sim: "Desfocado", nao: "Nítido"},
+  login_escurecer: {0: "Nada", 10: "10%", 20: "20%", 30: "30%", 40: "40%", 50: "50%", 60: "60%"},
   ilhas: {sim: "Em ilhas", nao: "Barra única"},
   efeitos: {desligado: "Desligados", sombras: "Só sombras e cantos", desfoque: "Desfoque e sombras"},
 };

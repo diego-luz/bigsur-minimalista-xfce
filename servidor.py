@@ -152,11 +152,21 @@ class Painel(BaseHTTPRequestHandler):
         if not valido:
             self._envia(403, ACESSO_HTML, "text/html; charset=utf-8")
             return
-        self.send_response(303)
+        # a janela chega aqui pelo arquivo local que o xdg-open abriu, e o
+        # navegador trata essa navegacao como vinda de outro site: o cookie Strict
+        # nao iria num redirecionamento para "/" e a pagina pediria o link de
+        # novo. Daqui a ida para "/" ja sai do proprio painel, e o cookie vai junto
+        corpo = (b"<!doctype html><meta charset=utf-8>"
+                 b"<meta http-equiv=refresh content='0;url=/'>"
+                 b"<script>location.replace('/')</script>"
+                 b"<a href='/'>abrir o painel</a>\n")
+        self.send_response(200)
         self.send_header("Set-Cookie", f"{_nome_cookie(porta)}={CHAVE}; HttpOnly; SameSite=Strict; Path=/")
-        self.send_header("Location", "/")
-        self.send_header("Content-Length", "0")
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(corpo)))
+        self.send_header("Cache-Control", "no-store")
         self.end_headers()
+        self.wfile.write(corpo)
 
     # ---- respostas -------------------------------------------------------
     def _envia(self, codigo: int, corpo: bytes, tipo: str) -> None:

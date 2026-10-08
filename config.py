@@ -55,7 +55,7 @@ OPCOES: tuple[Opcao, ...] = (
     Opcao("janelas", "sim", SIM_NAO,
           "Encaixe de janelas",
           "Super e setas para metades, Super+1 a 4 para quartos, layouts no Super+Z e "
-          "bordas mais largas; respeita o espaco das ilhas"),
+          "bordas mais largas; respeita o espaco das ilhas. Alt + arrastar move a janela e Alt + botao direito arrastado redimensiona"),
     # vindos do oasis-xfce; desligados, a barra continua a de sempre
     Opcao("ilhas", "nao", SIM_NAO,
           "Barra em ilhas",

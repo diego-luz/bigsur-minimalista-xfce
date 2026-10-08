@@ -6,6 +6,7 @@ acessivel pela rede. Quem quiser usar de outro computador que faca tunel SSH.
 
 from __future__ import annotations
 
+import base64
 import hmac
 import html
 import json
@@ -185,12 +186,12 @@ class Painel(BaseHTTPRequestHandler):
         self._envia(codigo, json.dumps(dados, ensure_ascii=False).encode(),
                     "application/json; charset=utf-8")
 
-    def corpo(self) -> dict:
+    def corpo(self, limite: int = 64_000) -> dict:
         try:
             tamanho = int(self.headers.get("Content-Length") or 0)
         except ValueError:
             return {}
-        if tamanho <= 0 or tamanho > 64_000:
+        if tamanho <= 0 or tamanho > limite:
             return {}
         try:
             dados = json.loads(self.rfile.read(tamanho))
@@ -278,6 +279,16 @@ class Painel(BaseHTTPRequestHandler):
             return
 
 
+        # miniatura da imagem propria do login, que fica fora da pasta web
+        if rota == "/api/login-propria.jpg":
+            origem = papeis.LOGIN_PROPRIA
+            alvo = papeis._miniatura(origem, "login-propria", 320) if origem.is_file() else None
+            if alvo is None:
+                self._envia(404, b"sem imagem", "text/plain")
+                return
+            self._envia(200, alvo.read_bytes(), "image/jpeg")
+            return
+
         if rota.startswith("/papeis/"):
             alvo = papeis.miniatura(Path(rota).stem)
             if alvo is None:
@@ -322,7 +333,8 @@ class Painel(BaseHTTPRequestHandler):
             self._negado()
             return
         rota = self.path.split("?")[0]
-        corpo = self.corpo()
+        # a imagem do login vem inteira no JSON (ja reduzida pela pagina)
+        corpo = self.corpo(8_000_000 if rota == "/api/login-imagem" else 64_000)
 
         if rota == "/api/sair":
             # sair no meio do apt deixaria o dpkg pela metade
@@ -340,6 +352,9 @@ class Painel(BaseHTTPRequestHandler):
 
         if rota == "/api/aplicar":
             self._aplicar(corpo)
+            return
+        if rota == "/api/login-imagem":
+            self._login_imagem(corpo)
             return
         if rota == "/api/instalar":
             self._instalar_tudo(corpo)
@@ -413,6 +428,32 @@ class Painel(BaseHTTPRequestHandler):
         config.gravar(pedido)
         self.json({"iniciado": True, "receitas": alvos, "mudou": mudou,
                    "reaplicou": not novidade})
+
+    def _login_imagem(self, corpo: dict) -> None:
+        """Guarda a imagem escolhida na pagina para o fundo do login. A pagina
+        manda um JPEG ja reduzido; aqui ele e conferido e regravado pelo
+        ImageMagick, so como JPEG, no lugar que papeis.fundo_login procura."""
+        try:
+            dados = base64.b64decode(str(corpo.get("imagem", "")), validate=True)
+        except (ValueError, TypeError):
+            dados = b""
+        if not dados.startswith(b"\xff\xd8\xff") or len(dados) > 6_000_000:
+            self.json({"ok": False, "erro": "a imagem nao chegou como JPEG (ou passou de 6 MB)"}, 400)
+            return
+        destino = papeis.LOGIN_PROPRIA
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        temp = destino.with_name(".login-propria-envio.jpg")
+        try:
+            temp.write_bytes(dados)
+            subprocess.run(["convert", f"jpeg:{temp}[0]", "-auto-orient", "-resize", "2560x1600>",
+                            "-strip", "-quality", "90", f"jpeg:{destino}"],
+                           capture_output=True, timeout=60, check=True)
+        except (OSError, subprocess.SubprocessError):
+            self.json({"ok": False, "erro": "nao consegui ler essa imagem"}, 400)
+            return
+        finally:
+            temp.unlink(missing_ok=True)
+        self.json({"ok": True})
 
     def _reiniciar_login(self, corpo: dict) -> None:
         """Reinicia o LightDM, o que encerra a sessao grafica. Nunca sem confirmacao."""

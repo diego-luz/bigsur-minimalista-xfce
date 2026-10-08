@@ -27,6 +27,8 @@ from . import caminhos
 PASTA = Path.home() / ".local/share/backgrounds/WhiteSur"
 CATALOGO = caminhos.WEB / "papeis"
 EXTENSOES = (".jpg", ".jpeg", ".png")
+# a imagem escolhida na pagina para o fundo da tela de login
+LOGIN_PROPRIA = caminhos.DADOS_DIR / "login-propria.jpg"
 NOME_VALIDO = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,80}")
 
 # quando o usuario deixa a escolha por conta do tema, esta e a ordem de
@@ -120,6 +122,9 @@ def do_desktop() -> Path | None:
 def fundo_login(cfg: dict[str, str]) -> Path | None:
     """A imagem de origem do fundo da tela de login."""
     valor = cfg.get("login_fundo", "desktop")
+    # a imagem da pessoa; sem ela (apagada, outra maquina), o mesmo do desktop
+    if valor == "propria" and LOGIN_PROPRIA.is_file():
+        return LOGIN_PROPRIA
     if valor == "do-tema":
         return escolhido({**cfg, "papel_de_parede": "do-tema"})
     if valor != "desktop":

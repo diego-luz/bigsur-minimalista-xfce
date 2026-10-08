@@ -72,8 +72,8 @@ OPCOES: tuple[Opcao, ...] = (
           "Papel de parede", "Escolha um da galeria, ou mantenha o seu",
           livre=r"[A-Za-z0-9][A-Za-z0-9._-]{0,80}"),
     # tela de login: alem de desktop e do-tema, aceita um nome da galeria
-    Opcao("login_fundo", "desktop", ("desktop", "do-tema"),
-          "Fundo da tela de login", "O mesmo do desktop, ou um da galeria",
+    Opcao("login_fundo", "desktop", ("desktop", "do-tema", "propria"),
+          "Fundo da tela de login", "O mesmo do desktop, um da galeria ou uma imagem sua",
           livre=r"[A-Za-z0-9][A-Za-z0-9._-]{0,80}"),
     Opcao("login_desfoque", "sim", SIM_NAO,
           "Fundo desfocado", "A imagem fica embacada atras dos campos, como no macOS"),

@@ -262,6 +262,9 @@ code{background:var(--painel2);border:1px solid var(--borda);padding:1px 5px;
                 font-weight:700;text-align:center;padding:6px;text-transform:uppercase;
                 letter-spacing:.05em}
 .papel.especial[aria-pressed=true]{color:var(--acento)}
+.escolher-imagem{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+.escolher-imagem .bt{padding:7px 14px;font-size:12px}
+.escolher-imagem .dica.erro{color:var(--erro)}
 
 /* --- esquema ao vivo ---------------------------------------------------- */
 .esquema{--e-fundo1:#e8556d;--e-fundo2:#3f7fd0;--e-barra:rgba(10,17,25,.72);

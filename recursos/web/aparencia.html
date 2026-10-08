@@ -135,6 +135,11 @@
       <div id="galeriaLogin" hidden>
         <div class="dica" style="margin-top:14px">Fundo da tela de login</div>
         <div class="papeis" id="papeisLogin"></div>
+        <div class="escolher-imagem">
+          <button class="bt sec" id="btImagemLogin" type="button">Escolher imagem…</button>
+          <span class="dica" id="avisoImagemLogin">JPEG, PNG ou WebP do seu computador</span>
+          <input type="file" id="arquivoLogin" accept="image/jpeg,image/png,image/webp" hidden>
+        </div>
       </div>
       <div class="acoes">
         <button class="bt pri" id="btAplicarLogin">Aplicar</button>
@@ -269,7 +274,8 @@ function desenharGaleria(){
   galeria("#galeria", "#papeis", "papel_de_parede",
           [["manter", "Manter o meu"], ["do-tema", "Deixar o tema escolher"]]);
   galeria("#galeriaLogin", "#papeisLogin", "login_fundo",
-          [["desktop", "Igual ao desktop"], ["do-tema", "Deixar o tema escolher"]]);
+          [["desktop", "Igual ao desktop"], ["do-tema", "Deixar o tema escolher"],
+           ["propria", "Minha imagem", () => `/api/login-propria.jpg?v=${versaoPropria}`]]);
 }
 
 function galeria(moldura, seletor, chave, especiais){
@@ -281,10 +287,21 @@ function galeria(moldura, seletor, chave, especiais){
   $(moldura).hidden = false;
   caixa.textContent = "";
 
-  especiais.forEach(([valor, texto]) => {
+  especiais.forEach(([valor, texto, imagem]) => {
     const b = document.createElement("button");
     b.className = "papel especial";
     b.textContent = texto;
+    // a imagem da pessoa aparece em miniatura; sem ela, fica so o texto
+    if (imagem){
+      const img = document.createElement("img");
+      img.alt = texto; img.src = imagem();
+      img.onload = () => {
+        b.textContent = ""; b.className = "papel";
+        const nome = document.createElement("span");
+        nome.className = "nome"; nome.textContent = texto;
+        b.append(img, nome);
+      };
+    }
     b.setAttribute("aria-pressed", String(estado[chave] === valor));
     b.addEventListener("click", () => { estado[chave] = valor; desenhar(); });
     caixa.appendChild(b);
@@ -321,6 +338,55 @@ function galeria(moldura, seletor, chave, especiais){
 }
 
 let doTema = {};
+
+// ---- imagem propria para o fundo do login ----------------------------------
+// a foto de uma camera passaria do limite do painel: sai daqui em JPEG de no
+// maximo 2560x1600, e o painel confere e regrava
+let versaoPropria = 0;
+function reduzirImagem(arquivo){
+  return new Promise((ok, falha) => {
+    const url = URL.createObjectURL(arquivo);
+    const img = new Image();
+    img.onload = () => {
+      const escala = Math.min(1, 2560 / img.naturalWidth, 1600 / img.naturalHeight);
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * escala);
+      c.height = Math.round(img.naturalHeight * escala);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL("image/jpeg", 0.9).split(",")[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); falha(new Error("o navegador não abriu essa imagem")); };
+    img.src = url;
+  });
+}
+$("#btImagemLogin").addEventListener("click", () => $("#arquivoLogin").click());
+$("#arquivoLogin").addEventListener("change", async () => {
+  const entrada = $("#arquivoLogin"), aviso = $("#avisoImagemLogin"), botao = $("#btImagemLogin");
+  const arquivo = entrada.files && entrada.files[0];
+  entrada.value = "";
+  if (!arquivo) return;
+  botao.disabled = true;
+  aviso.classList.remove("erro");
+  aviso.textContent = "Preparando a imagem…";
+  try {
+    const imagem = await reduzirImagem(arquivo);
+    aviso.textContent = "Enviando…";
+    const r = await fetch("/api/login-imagem", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({imagem}),
+    }).then(x => x.json());
+    if (!r.ok) throw new Error(r.erro || "o painel recusou a imagem");
+    versaoPropria++;
+    aviso.textContent = "Imagem escolhida. Aplique para a tela de login usar.";
+    estado.login_fundo = "propria";
+    desenhar();
+  } catch (erro){
+    aviso.textContent = "Não deu: " + erro.message;
+    aviso.classList.add("erro");
+  }
+  botao.disabled = false;
+});
 
 // as mesmas cores do WhiteSur, de src/sass/_colors-palette.scss
 const DESTAQUE = {padrao: "#0860f2", azul: "#2e7cf7", roxo: "#9a57a3", rosa: "#e55e9c",

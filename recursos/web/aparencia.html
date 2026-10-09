@@ -16,6 +16,21 @@
     das janelas e configura a barra do topo e a tela de login. Leva de 15 a 25 minutos,
     e a maior parte é a compilação.
   </p>
+  <!-- outro tema Xfce da familia aplicado: os dois nao convivem (familia.py) -->
+  <div class="aviso erro" id="cartaoTrocar" hidden style="margin:0 0 12px">
+    <b id="trocarTitulo">Outro tema instalado</b>
+    <span id="trocarTexto"></span>
+    <div class="acoes" style="margin-top:10px" id="trocarAcoes">
+      <button class="bt pri" id="btTrocar">Voltar o outro e instalar este</button>
+    </div>
+    <div id="confirmaTrocar" hidden role="alert" style="margin-top:10px">
+      <span id="confirmaTrocarTexto"></span>
+      <div class="acoes" style="margin-top:10px">
+        <button class="bt pri" id="btTrocarSim">Sim, trocar</button>
+        <button class="bt sec" id="btTrocarNao">Cancelar</button>
+      </div>
+    </div>
+  </div>
   <details class="verif" id="verif">
     <summary id="verifResumo">Verificando…</summary>
     <div id="verificacoes"></div>
@@ -186,7 +201,9 @@ const $ = s => document.querySelector(s);
 let estado = {}, salvo = {}, opcoes = [], receitas = [], instalado = true, previa = "escuro";
 let retomou = false;
 const BOTOES = ["#btAplicar", "#btAplicarLogin", "#btCapturar", "#btCapturarTodas",
-                "#btLogin", "#btReiniciarLogin", "#btInstalar", "#btRever", "#btDesfazer", "#btDesfazerSim"];
+                "#btLogin", "#btReiniciarLogin", "#btInstalar", "#btRever", "#btDesfazer", "#btDesfazerSim",
+                "#btTrocar", "#btTrocarSim"];
+let outroTema = null;   // outro tema Xfce da familia aplicado nesta conta
 const APLICAR = ["#btAplicar", "#btAplicarLogin"];
 // imagens de exemplo por opcao, do pacote: {chave: {valor: arquivo}}
 let EXEMPLOS = null;
@@ -573,6 +590,7 @@ async function carregar(){
   proprias = d.proprias || [];
   receitas = d.receitas || [];
   instalado = d.instalado !== false;
+  outroTema = d.outro_tema || null;
   desenhar();
   desenharEtapas();
   try {
@@ -584,6 +602,7 @@ async function carregar(){
 
   $("#cartaoInstalar").hidden = instalado;
   $("#cartaoDesfazer").hidden = !receitas.some(r => r.aplicada);
+  desenharTroca();
   APLICAR.forEach(sel => {
     ROTULOS[sel] = instalado ? "Aplicar" : "Aplicar (instale primeiro)";
   });
@@ -673,6 +692,58 @@ $("#btInstalar").addEventListener("click", async () => {
     etapas: etapasDe(receitas.map(x => x.id)),
     dica: "Leva de 15 a 25 minutos; a compilação do tema é a parte lenta. Deixe esta página aberta.",
     aoTerminar: async codigo => { await carregar(); return fimInstalar(codigo); },
+  });
+});
+
+// ---- trocar de tema: outro tema Xfce da familia esta aplicado ---------------
+
+function desenharTroca(){
+  const o = outroTema;
+  $("#cartaoTrocar").hidden = !o;
+  $("#confirmaTrocar").hidden = true;
+  if (!o) return;
+  $("#trocarTitulo").textContent = `O tema ${o.nome} está instalado nesta conta`;
+  $("#trocarAcoes").hidden = !o.achado;
+  $("#trocarTexto").textContent = o.achado
+    ? `Os dois usam os mesmos scripts, o picom, o painel e os atalhos, então não dá para ter os dois. `
+      + `A troca primeiro volta o ${o.nome} ao que era antes (os pacotes dele ficam) e só então instala este, `
+      + `com as opções abaixo.`
+    : `Os dois não convivem, e não achei o projeto ${o.modulo} para voltar o ${o.nome} daqui. `
+      + `Rode no terminal: ${o.comando}`;
+  ROTULOS["#btTrocar"] = `Voltar o ${o.nome} e instalar este`;
+  $("#btTrocar").textContent = ROTULOS["#btTrocar"];
+  $("#confirmaTrocarTexto").textContent = `O ${o.nome} volta ao que era antes, como no “voltar” dele, `
+    + `e depois a instalação deste roda inteira. Se o voltar do ${o.nome} falhar, nada deste é instalado.`;
+}
+
+function fimTrocar(codigo){
+  if (codigo === 0) return {bom: true, titulo: "Tema trocado",
+    texto: "O tema anterior voltou e este foi instalado. Saia da sessão e entre de novo para ver tudo no lugar."};
+  if (codigo !== null) return {bom: false, titulo: "A troca parou com erro",
+    texto: `Código ${codigo}. Se parou no voltar do outro tema, nada deste foi instalado; o log mostra onde.`};
+  return null;
+}
+
+$("#btTrocar").addEventListener("click", () => {
+  $("#confirmaTrocar").hidden = false;
+  $("#btTrocarSim").focus();
+});
+$("#btTrocarNao").addEventListener("click", () => { $("#confirmaTrocar").hidden = true; });
+$("#btTrocarSim").addEventListener("click", async () => {
+  $("#confirmaTrocar").hidden = true;
+  travar(true, "#btTrocar", "Trocando…");
+  const r = await pedir("/api/trocar", estado);
+  if (!r.iniciado){
+    naoComecou((r.impedimentos || []).length
+      ? "As verificações impedem: " + r.impedimentos.join(", ") + "."
+      : (r.erro || (r.motivo === "ocupado"
+        ? "Já tem uma tarefa rodando. Espere terminar." : "Não consegui começar a troca.")));
+    return;
+  }
+  Terminal.acompanhar({
+    titulo: `Trocando o ${r.outro} por este tema`,
+    etapas: etapasDe(receitas.map(x => x.id)),
+    aoTerminar: async codigo => { await carregar(); return fimTrocar(codigo); },
   });
 });
 

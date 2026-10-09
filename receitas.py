@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-from . import caminhos, config, estado, motor
+from . import caminhos, config, estado, familia, motor
 
 
 @dataclass
@@ -120,6 +120,13 @@ def executar(apenas: list[str] | None = None, pular: list[str] | None = None,
              cfg: dict[str, str] | None = None) -> int:
     """Roda as receitas escolhidas. Devolve quantas falharam."""
     diz = saida or print
+    # outro tema Xfce da familia aplicado nesta conta: nada roda (ver familia.py)
+    recusa = familia.recusa()
+    if recusa:
+        if not simular:
+            diz(f"  {recusa}")
+            return 1
+        diz(f"  atencao: {recusa}; a simulacao segue, a instalacao de verdade seria recusada")
     try:
         with caminhos.trava():
             # pasta de montagem da tela de login so desta execucao: nova, com

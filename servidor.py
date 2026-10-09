@@ -19,7 +19,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import (caminhos, capturas, config, estado, papeis, programas,
+from . import (caminhos, capturas, config, estado, familia, papeis, programas,
                receitas, sistema)
 from .tarefa import Tarefa
 
@@ -240,6 +240,7 @@ class Painel(BaseHTTPRequestHandler):
                 "opcoes": [o.como_dict() for o in config.OPCOES],
                 "receitas": [r.como_dict() for r in lista],
                 "instalado": receitas.instalado(lista),
+                "outro_tema": familia.para_pagina(),
                 "previa": capturas.nome_do_momento(),
                 # fotos tiradas nesta maquina; as outras sao os exemplos do pacote
                 "proprias": sorted(p.stem for p in caminhos.CAPTURAS.glob("*.jpg")),
@@ -359,6 +360,9 @@ class Painel(BaseHTTPRequestHandler):
         if rota == "/api/instalar":
             self._instalar_tudo(corpo)
             return
+        if rota == "/api/trocar":
+            self._trocar(corpo)
+            return
         if rota == "/api/desfazer":
             from . import desfazer
             apagar = bool(corpo.get("apagar"))
@@ -391,7 +395,56 @@ class Painel(BaseHTTPRequestHandler):
         self._envia(404, b"nao encontrado", "text/plain; charset=utf-8")
 
     # ---- acoes -----------------------------------------------------------
+    def _recusa_da_familia(self) -> bool:
+        """Outro tema Xfce da familia aplicado: responde com o motivo, que a
+        pagina mostra como os outros erros (ver familia.py)."""
+        recusa = familia.recusa()
+        if recusa:
+            self.json({"iniciado": False, "motivo": "outro tema", "erro": recusa}, 409)
+        return bool(recusa)
+
+    def _trocar(self, corpo: dict) -> None:
+        """Volta o outro tema Xfce da familia (o restaurar dele, os pacotes
+        ficam) e instala este com as opcoes da pagina."""
+        outro = familia.para_pagina()
+        if not outro:
+            self.json({"iniciado": False, "motivo": "nada a trocar",
+                       "erro": "nenhum outro tema Xfce da familia esta instalado nesta conta"}, 409)
+            return
+        if not outro["achado"]:
+            self.json({"iniciado": False, "motivo": "outro tema",
+                       "erro": f"nao achei o projeto {outro['modulo']}; volte o tema {outro['nome']} "
+                               f"no terminal: {outro['comando']}"}, 409)
+            return
+        impedem = sistema.impedimentos(sistema.verificacoes(usar_cache=False))
+        if impedem:
+            self.json({"iniciado": False, "motivo": "verificacoes",
+                       "impedimentos": impedem}, 412)
+            return
+        pedido = config.filtrar(corpo)
+        if not caminhos.livre():
+            self.json({"iniciado": False, "motivo": "ocupado",
+                       "detalhe": "a linha de comando esta rodando"}, 409)
+            return
+
+        def trocar_e_instalar(diz) -> int:
+            if familia.trocar(diz) != 0:
+                return 1
+            return receitas.executar(saida=diz, cfg={**config.ler(), **pedido})
+
+        # o rotulo comeca como o da instalacao: a pagina recarregada acompanha igual
+        iniciado = tarefa.funcao(f"Instalacao completa, trocando o tema {outro['nome']}",
+                                 trocar_e_instalar)
+        if not iniciado:
+            self.json({"iniciado": False, "motivo": "ocupado"}, 409)
+            return
+        if pedido:
+            config.gravar(pedido)
+        self.json({"iniciado": True, "outro": outro["nome"]})
+
     def _aplicar(self, corpo: dict) -> None:
+        if self._recusa_da_familia():
+            return
         pedido = config.filtrar(corpo)
         if not pedido:
             self.json({"iniciado": False, "motivo": "nada valido"}, 400)
@@ -483,6 +536,8 @@ class Painel(BaseHTTPRequestHandler):
             stderr=subprocess.DEVNULL)).start()
 
     def _instalar_tudo(self, corpo: dict) -> None:
+        if self._recusa_da_familia():
+            return
         impedem = sistema.impedimentos(sistema.verificacoes(usar_cache=False))
         if impedem:
             self.json({"iniciado": False, "motivo": "verificacoes",

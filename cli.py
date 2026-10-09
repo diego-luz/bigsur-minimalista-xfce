@@ -88,7 +88,16 @@ def cmd_listar(_args) -> int:
 
 def cmd_aplicar(args) -> int:
     if not args.simular:
+        # outro tema Xfce da familia aplicado: recusa antes do sudo, ou, com
+        # --trocar, volta o outro primeiro; na simulacao o aviso sai e ela segue
+        from . import familia
+        recusa = familia.recusa()
+        if recusa and not args.trocar:
+            print(f"  {recusa}")
+            return 1
         garantir_sudo()
+        if recusa and familia.trocar(print, terminal=True) != 0:
+            return 1
     falhas = receitas.executar(
         apenas=args.apenas.split(",") if args.apenas else None,
         pular=args.pular.split(",") if args.pular else None,
@@ -103,6 +112,11 @@ def cmd_aplicar(args) -> int:
 
 
 def cmd_instalar(args) -> int:
+    from . import familia
+    recusa = familia.recusa()
+    if recusa:
+        print(f"  {recusa}")
+        return 1
     impedem = sistema.impedimentos()
     if impedem and not args.mesmo_assim:
         print("  verificacoes que impedem a instalacao: " + ", ".join(impedem))
@@ -211,6 +225,8 @@ def construir() -> argparse.ArgumentParser:
     a.add_argument("--pular", help="ids ou nomes separados por virgula")
     a.add_argument("--refazer", action="store_true", help="refaz o que ja foi aplicado")
     a.add_argument("--simular", action="store_true", help="mostra sem alterar nada")
+    a.add_argument("--trocar", action="store_true",
+                   help="com outro tema Xfce da familia instalado, volta ele antes (os pacotes ficam)")
     a.set_defaults(func=cmd_aplicar)
 
     i = sub.add_parser("instalar", help="instalacao completa, do zero")

@@ -54,6 +54,12 @@ def desmarcar(ident: str) -> None:
 def limpar_marcas() -> None:
     for arquivo in caminhos.APLICADO.glob("*"):
         arquivo.unlink(missing_ok=True)
+    # a pasta fica com a hora do desfazer: diario mais velho que ela ja foi
+    # desfeito, e os outros temas da familia deixam de ver este (familia.py)
+    try:
+        os.utime(caminhos.APLICADO)
+    except OSError:
+        pass
 
 
 def copia_de_seguranca(alvo: Path) -> bool:

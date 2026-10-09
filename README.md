@@ -99,6 +99,8 @@ Os de terminal ficam em [d3bian-terminal](https://git.saberdl.dev.br/d3bian-term
 | 🍎 | [tahoe-gnome](https://git.saberdl.dev.br/d3bian-temas/tahoe-gnome) | Cara de macOS Tahoe no GNOME 48 |
 | 🧩 | [modelo](https://git.saberdl.dev.br/d3bian-temas/modelo) | O modelo de onde todos saem: crie o seu próprio d3bian-init |
 
+Os temas Xfce (🪟) são um por conta: com outro instalado, a instalação é recusada, e `aplicar --trocar` (ou o botão no painel) volta o outro e instala este ([detalhes](docs/uso.md#um-tema-xfce-por-vez)).
+
 ## Créditos
 
 - [WhiteSur](https://github.com/vinceliuice/WhiteSur-gtk-theme), de vinceliuice: tema GTK

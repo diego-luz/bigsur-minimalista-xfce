@@ -30,7 +30,7 @@ voltar ao que era antes.
 
 ## Ilhas, picom e encaixe
 
-Vindos do [oasis-xfce](https://git.saberdl.dev.br/d3bian-temas/oasis-xfce), com os
+Vindos do [oasis-xfce](https://github.com/diego-luz/oasis-xfce), com os
 mesmos arquivos em `recursos/arquivos`:
 
 | Arquivo | O que faz |

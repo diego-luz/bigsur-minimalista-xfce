@@ -7,7 +7,7 @@
 Clone com o nome da pasta igual ao do pacote Python (com `_`) e rode como módulo:
 
 ```sh
-git clone https://git.saberdl.dev.br/d3bian-temas/bigsur-minimalista-xfce.git d3bian_init_bigsur_minimalista_xfce
+git clone https://github.com/diego-luz/bigsur-minimalista-xfce.git d3bian_init_bigsur_minimalista_xfce
 python3 -m d3bian_init_bigsur_minimalista_xfce            # pede a senha uma vez e abre o painel
 python3 -m d3bian_init_bigsur_minimalista_xfce aplicar --simular
 ```
@@ -41,7 +41,7 @@ são quatro pacotes a menos e nenhum processo permanente além do painel. Quem
 quiser pode ligar a barra em ilhas (com um dock) e os efeitos do picom, opções
 que vêm desligadas.
 
-O completo é o [bigsur-xfce](https://git.saberdl.dev.br/d3bian-temas/bigsur-xfce).
+O completo é o [bigsur-xfce](https://github.com/diego-luz/bigsur-xfce).
 
 ## Opções
 
@@ -61,7 +61,7 @@ O completo é o [bigsur-xfce](https://git.saberdl.dev.br/d3bian-temas/bigsur-xfc
 
 Os padrões deixam o minimalista de sempre: barra única no topo e efeitos
 desligados. As ilhas e o picom vêm do
-[oasis-xfce](https://git.saberdl.dev.br/d3bian-temas/oasis-xfce).
+[oasis-xfce](https://github.com/diego-luz/oasis-xfce).
 
 ## Barra em ilhas
 
